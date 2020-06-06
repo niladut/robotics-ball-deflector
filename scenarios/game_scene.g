@@ -50,8 +50,24 @@ camera(world){
     focalLength:0.895, width:640, height:360, zRange:[.5 100]
 }
 
-shape ramp_1 (table){ type=mesh rel=<T -1.2 -0.3 .1 1 0 0 0 >  mesh='ramp_1.stl'  meshscale=0.001  rel_includes_mesh_center,  }
+ball1 (table) {
+    shape:ssBox, Q:<t(-1.5 -.5 1)>, size:[.05 .05 .05 .05], color:[1 .5 .5],  mass:2
+    contact, logical:{ }
+    friction:.1
+}
 
-shape ramp_2 (table){ type=mesh rel=<T -1.2 0.3 .1 1 0 0 0 >  mesh='ramp_2.stl'  meshscale=0.001  rel_includes_mesh_center,  color:[.9 0 0]}
+ball2 (table) {
+    shape:ssBox, Q:<t(-1.5 .5 1)>, size:[.05 .05 .05 .05], color:[1 1 .5], mass:2
+    contact, logical:{ }
+    friction:.1
+}
 
-shape deflector (table){ type=mesh rel=<T 1.2 0 .1 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.001  rel_includes_mesh_center,  }
+
+shape ramp_1 (table){ type=mesh rel=<T -0.75 0 .15 0.7071 0 0 -0.7071 >  mesh='ramp_1.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.8 0 1]  }
+
+shape ramp_2 (table){ type=mesh rel=<T -0.7 0 .35 0.7071 0 0 -0.7071 >  mesh='ramp_2.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.5 0 1]}
+
+shape deflector(table) { type=mesh rel=<T 1.2 0 .3 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
+#1/sqrt2
+shape bin (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
+shape bin (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
