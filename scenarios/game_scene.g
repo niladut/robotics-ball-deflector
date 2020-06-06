@@ -50,17 +50,11 @@ camera(world){
     focalLength:0.895, width:640, height:360, zRange:[.5 100]
 }
 
-ball1 (table) {
-    shape:ssBox, Q:<t(-1.5 -.5 1)>, size:[.05 .05 .05 .05], color:[1 .5 .5],  mass:2
-    contact, logical:{ }
-    friction:.1
-}
 
-ball2 (table) {
-    shape:ssBox, Q:<t(-1.5 .5 1)>, size:[.05 .05 .05 .05], color:[1 1 .5], mass:2
-    contact, logical:{ }
-    friction:.1
-}
+ball1 	{  shape:ssBox, size:[.05 .05 .05 .05],, mass:0.2 X:<[-1.5, -.5, 1, 1, 0, 0, 0]> , color:[1 1 .5]}
+
+
+ball2 	{  shape:ssBox, size:[.05 .05 .05 .05],, mass:0.2 X:<[-1.5, .5, 1, 0.511492, 0.409407, -0.742116, -0.141515]> , color:[1 1 .5]}
 
 
 shape ramp_1 (table){ type=mesh rel=<T -0.75 0 .15 0.7071 0 0 -0.7071 >  mesh='ramp_1.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.8 0 1]  }

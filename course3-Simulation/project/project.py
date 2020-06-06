@@ -28,9 +28,29 @@ C.addFile("../../scenarios/game_scene.g")
 V = ry.ConfigurationViewer()
 V.setConfiguration(C)
 
-input("Model World Setup Complete...")
+input("Model World Setup Complete...Start Simulation?")
 
+#-- the following is the simulation loop
+tau = .01
 
+for t in range(300):
+    time.sleep(0.01)
+
+    #grab sensor readings from the simulation
+    q = S.get_q()
+    if t%10 == 0:
+            [rgb, depth] = S.getImageAndDepth()  #we don't need images with 100Hz, rendering is slow
+
+    #some good old fashioned IK
+    C.setJointState(q) #set your robot model to match the real q
+    V.setConfiguration(C) #to update your model display
+    [y,J] = C.evalFeature(ry.FS.position, ["R_gripper"])
+    vel = J.T @ np.linalg.inv(J@J.T + 1e-2*np.eye(y.shape[0])) @ [0.,0.,-1e-1];
+
+    #send velocity controls to the simulation
+    S.step(vel, tau, ry.ControlMode.velocity)
+
+print("Simulation Ended")
 S=0
 V=0
 C=0
