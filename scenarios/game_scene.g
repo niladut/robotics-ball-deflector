@@ -1,10 +1,35 @@
 world {}
 
 table (world){
-    shape:ssBox, Q:<t(0 0. .6)>, size:[2. 2. .1 .02], color:[.3 .3 .3]
+    shape:ssBox, Q:<t(0 0. .2)>, size:[4. 4. .1 .02], color:[.2 .55 0.2]
     contact, logical:{ }
     friction:.1
 }
+
+f_wall (table){
+    shape:ssBox, Q:<t(0 2 .1)>, size:[4 .02 .3 .01], color:[.7 .5 .5]
+    contact, logical:{ }
+    friction:.1
+}
+
+b_wall (table){
+    shape:ssBox, Q:<t(0 -2 .1)>, size:[4. .02 .3 .01], color:[.7 .5 .5]
+    contact, logical:{ }
+    friction:.1
+}
+
+l_wall (table){
+    shape:ssBox, Q:<t(2 0 .1)>, size:[.02 4. .3 .01], color:[.7 .5 .5]
+    contact, logical:{ }
+    friction:.1
+}
+
+r_wall (table){
+    shape:ssBox, Q:<t(-2 0 .1)>, size:[.02 4. .3 .01], color:[.7 .5 .5]
+    contact, logical:{ }
+    friction:.1
+}
+
 
 #L_lift (table){ joint:transZ, limits:[0 .5] }
 
@@ -27,6 +52,6 @@ camera(world){
 
 shape ramp_1 (table){ type=mesh rel=<T -0.0282159 0.00517696 0.272424 1 0 0 0 >  mesh='ramp_1.stl'  meshscale=0.001  rel_includes_mesh_center,  }
 
-shape ramp_2 (table){ type=mesh rel=<T -0.0282159 0.00517696 0.372424 1 0 0 0 >  mesh='ramp_2.stl'  meshscale=0.001  rel_includes_mesh_center,  }
+shape ramp_2 (table){ type=mesh rel=<T -0.0282159 0.00517696 0.372424 1 0 0 0 >  mesh='ramp_2.stl'  meshscale=0.001  rel_includes_mesh_center,  color:[.9 0 0]}
 
 shape deflector (table){ type=mesh rel=<T -0.0282159 0.00517696 0.472424 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.001  rel_includes_mesh_center,  }
