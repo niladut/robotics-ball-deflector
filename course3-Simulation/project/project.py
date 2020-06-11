@@ -60,7 +60,7 @@ while True:
     if t==600:
         S.closeGripper("A_gripper")
     if t>=800:
-        [y,J] = RealWorld.evalFeature(ry.FS.positionDiff, ["A_gripperCenter", "ball1"])
+        [y,J] = RealWorld.evalFeature(ry.FS.positionDiff, ["A_gripperCenter", "ball3"])
         vel = J.T @ np.linalg.inv(J@J.T + 1e-2*np.eye(y.shape[0])) @ (-y)
     
         
@@ -70,8 +70,8 @@ while True:
 
 
         
-#     if t==900:
-#         S.openGripper("A_gripper")
+    if t==900:
+        S.openGripper("A_gripper")
         
 #     if S.getGripperIsGrasping("gripper"):
 #         [y,J] = C.evalFeature(ry.FS.position, ["gripper"]);
