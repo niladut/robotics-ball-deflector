@@ -69,3 +69,8 @@ move it to a specified target position.
     1. Integration B2 (bouncing ball): Use camera to perceive the position of a bouncing spherical ball and use the deflector tool to deflect the ball such that it changes direction(reflects) towards a target direction.
 
    
+## 2. Usage
+To run the project file
+```bash
+python3 project.py
+```
