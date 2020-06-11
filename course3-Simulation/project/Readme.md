@@ -1,11 +1,22 @@
-# Project : Deflector
+# Project : Ball Deflector
 
-AI and Robotics SS20
-Project Proposal
-Ankit Dagar Niladri Dutta
-June 2020
+* Course Name: AI and Robotics SS20
+* Authors: Ankit Dagar Niladri Dutta
+* Date Created: June 2020
 
-## 1 Ob jective
+
+## Index
+  * [1. Objective](#1-objective)
+    + [1.1 Primary Objective](#11-primary-objective)
+      - [1.1.1 Environment Description](#111-environment-description)
+      - [1.1.2 Behaviour Description](#112-behaviour-description)
+    + [1.2 Secondary (Optional) Objective](#12-secondary--optional--objective)
+      - [1.2.1 Environment Description](#121-environment-description)
+      - [1.2.2 Behaviour Description](#122-behaviour-description)
+    + [Task List](#task-list)
+  * [2 Usage](#2-usage)
+ 
+## 1. Objective
 To demonstrate a simulation where the Panda Robot Arm is used to redirect the path of a moving (spherical) ball into a specified goal.
 ### 1.1 Primary Objective
 To demonstrate a simulation where the Panda Robot Arm is used to redirect the path of a rolling (spherical) ball into a specified goal (cuboid hole).
