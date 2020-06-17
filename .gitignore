@@ -136,3 +136,6 @@ srv_gen
 *Feedback.msg
 *Goal.msg
 *Result.msg
+
+%% OSX
+.DS_Store
