@@ -33,16 +33,18 @@ r_wall (table){
 
 #L_lift (table){ joint:transZ, limits:[0 .5] }
 
-Prefix: "L_"
+Prefix: "A_"
 Include: 'panda_moveGripper.g'
 
-Prefix: "R_"
+Prefix: "B_"
 Include: 'panda_moveGripper.g'
 
 Prefix!
         
-Edit L_panda_link0 (table) { Q:<t(-1.5 0 .1) d(0 0 0 1)> }
-Edit R_panda_link0 (table)  { Q:<t( 1.5 0 .1) d(180 0 0 1)> }
+Edit A_panda_link0 (table) { Q:<t(-1.5 0 .1) d(0 0 0 1)> }
+Edit A_gripper { contact:1 }
+Edit B_panda_link0 (table)  { Q:<t( 1.5 0 .1) d(180 0 0 1)> }
+Edit R_gripper { contact:1 }
 
 camera(world){
     Q:<t(-0.01 -.2 1.8) d(30 1 0 0)>,
@@ -50,8 +52,20 @@ camera(world){
     focalLength:0.895, width:640, height:360, zRange:[.5 100]
 }
 
-shape ramp_1 (table){ type=mesh rel=<T -1.2 -0.3 .1 1 0 0 0 >  mesh='ramp_1.stl'  meshscale=0.001  rel_includes_mesh_center,  }
 
-shape ramp_2 (table){ type=mesh rel=<T -1.2 0.3 .1 1 0 0 0 >  mesh='ramp_2.stl'  meshscale=0.001  rel_includes_mesh_center,  color:[.9 0 0]}
+ball1 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, -.5, 1, 1, 0, 0, 0]> , color:[1 1 .5], contact}
 
-shape deflector (table){ type=mesh rel=<T 1.2 0 .1 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.001  rel_includes_mesh_center,  }
+ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .5, 1,  1, 0, 0, 0]> , color:[1 .5 .5], contact}
+
+ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-0.75, 0, 1,  1, 0, 0, 0]> , color:[0.5 .5 1], contact}
+
+
+
+shape ramp_1 (table){ type=mesh rel=<T -0.75 0 .15 0.7071 0 0 -0.7071 >  mesh='ramp_1.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.8 0 1]  }
+
+#shape ramp_2 (table){ type=mesh rel=<T -0.7 0 .35 0.7071 0 0 -0.7071 >  mesh='ramp_2.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.5 0 1]}
+
+shape deflector(table) { type=mesh rel=<T 1.2 0 .3 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
+#1/sqrt2
+shape bin (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
+shape bin (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
