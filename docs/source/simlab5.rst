@@ -1,6 +1,6 @@
-===========================
- SimLab Exercise 5 - Grasp
-===========================
+=================================
+ SimLab Exercise 5 - Grasp Again
+=================================
 
 Before new exercises, always update the repo::
 
