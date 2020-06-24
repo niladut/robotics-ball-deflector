@@ -86,6 +86,9 @@ class BallDeflector:
         self.RealWorld = ry.Config()
         self.RealWorld.addFile("../../scenarios/game_scene.g")
 
+        testBall = self.RealWorld.getFrame('ball3')
+        # objectPosition = self.testBall.getPosition()
+        testBall.setPosition([0.7, 0, .5])
 
         # Configure Physics Engine
         self.S = self.RealWorld.simulation(ry.SimulatorEngine.physx, True)
@@ -235,6 +238,31 @@ class BallDeflector:
 
         print('===== Done Aligning =====')
 
+    def alignDeflector(self, robotName):
+        gripperCenterFrame = robotName + "_gripperCenter"
+        gripperFingerFrame = robotName + "_finger1"
+        print('===== Aligning =====')
+        T = 30
+        self.C.setJointState(self.S.get_q())
+        komo = self.C.komo_path(1.,T,T*self.tau,True)
+        komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, self.targetFrame], ry.OT.eq, [2e1], target=[0.01,0,0.8])
+        komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
+        komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
+        komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
+        komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
+        komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
+        komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
+        komo.optimize()
+        for t in range(T):
+            self.C.setFrameState(komo.getConfiguration(t))
+            q = self.C.getJointState()
+            time.sleep(self.tau)
+            self.S.step(q, self.tau, ry.ControlMode.position)
+            self.V.setConfiguration(self.C)
+            self.t += 1
+
+        print('===== Done Aligning =====')
+
     def pick(self, robotName):
         gripperCenterFrame = robotName + "_gripperCenter"
         gripperFrame = robotName + "_gripper"
@@ -274,18 +302,15 @@ class BallDeflector:
                 return False
 
 
-    def moveToDest(self, robotName):
+    def moveToDest(self, robotName, targetPose):
         gripperCenterFrame = robotName + "_gripperCenter"
         gripperFingerFrame = robotName + "_finger1"
-        print('===== Lifting =====')
+        # print('===== Lifting =====')
         T = 30
         self.C.setJointState(self.S.get_q())
         komo = self.C.komo_path(1.,T,T*self.tau,True)
-        target = self.C.getFrame("ramp_1").getPosition()
-        target[-1] += 1
-        target[0] -= 0
         # target[:2] = (np.random.rand(2)-.5)/3
-        komo.addObjective([1.], ry.FS.position, [gripperCenterFrame], ry.OT.eq, [2e1], target=target)
+        komo.addObjective([1.], ry.FS.position, [gripperCenterFrame], ry.OT.eq, [2e1], target=targetPose)
         komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
         komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
         komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
@@ -298,7 +323,7 @@ class BallDeflector:
             self.t += 1
             time.sleep(self.tau)
 
-        print('===== Done Lifting =====')
+        # print('===== Done Lifting =====')
 
     def moveToInit(self):
         print('===== Go to Initial Pose =====')
@@ -346,51 +371,72 @@ class BallDeflector:
     #         input()
         success = self.pick(robotName)
         if success:
-            self.moveToDest(robotName)
+            targetPose = self.C.getFrame("ramp_1").getPosition()
+            targetPose[-1] += 1
+            targetPose[0] -= 0
+            self.moveToDest(robotName,targetPose)
             self.openGripper(robotName)
             print('====== Done ======')
     #         input()
 
 
-    def deflectBall(self,ballFrame,binFrame):
-        print(' Deflecting',ballFrame,' to ',ballFrame,' #')
+    def deflectBall(self, robotName, ballFrame,binFrame):
+        # print(' Deflecting',ballFrame,' to ',ballFrame,' #')
+        print('===== Hitting ',ballFrame,' with Robot ', robotName ,' =====')
 
-
-    def pickDeflectorTool(self, robotName, targetFrame):
-        print(' Picking ',targetFrame,' #')
-        self.setTarget(targetFrame)
-        self.openGripper(robotName)
+        self.setTarget(ballFrame)
         self.moveToInit()
         self.perception()
-        self.align(robotName)
+        self.alignDeflector(robotName)
+        targetPose = self.RealWorld.getFrame(ballFrame).getPosition()
+        # targetPose[1] += -0.55
+        targetPose[2] += 0.55
+        # targetPose[1] += 0.5
+
+        self.moveToDest(robotName,targetPose)
+
+    def hitBall(self, robotName, targetFrame):
+        print('===== Hitting ',targetFrame,' =====')
+    #     self.setTarget(targetFrame)
+    #     self.openGripper(robotName)
+    #     self.moveToInit()
+    #     self.perception()
+    #     self.align(robotName)
+    # #         input()
+    #     success = self.pick(robotName)
+    #     if success:
+    #         self.moveToDest(robotName)
+    #         self.openGripper(robotName)
+    #         print('====== Done ======')
     #         input()
-        success = self.pick(robotName)
-        if success:
-            self.moveToDest(robotName)
-            self.openGripper(robotName)
-            print('====== Done ======')
-    #         input()
+
+        # targetPose = self.C.getFrame(targetFrame).getPosition()
+        # targetPose[-1] += -0.55
+        # targetPose[0] -= 0
+        # self.moveToDest(robotName,targetPose)
 
 
 def main():
-    M = BallDeflector(perceptionMode='cheat')
+    M = BallDeflector()
 
-    # M.runSim(500)
     # Robot B: Pick Deflector Tool
-    # M.pickDeflectorTool("B", "deflector")
     # M.pickAndPlace("B", "deflector")
 
     # Robot A: Pick and Place Ball 1 on Ramp
-    M.pickAndPlace("A","ball1")
+    # M.pickAndPlace("A","ball1")
+    # M.runSim(300)
 
     # Robot B: Localize and deflect moving Ball to Target P
-    M.deflectBall('ball1','binP')
-
-    # Robot A: Pick and Place Ball 2 on Ramp
-    M.pickAndPlace("A","ball2")
-
-    # Robot B: Localize and deflect moving Ball to Target Q
-    M.deflectBall('ball2','binQ')
+    M.deflectBall('B','ball3','binP')
+    M.deflectBall('B','ball3','binP')
+    # M.runSim(500)
+    # M.hitBall("B", "ball1")
+    #
+    # # Robot A: Pick and Place Ball 2 on Ramp
+    # M.pickAndPlace("A","ball2")
+    #
+    # # Robot B: Localize and deflect moving Ball to Target Q
+    # M.deflectBall('ball2','binQ')
 
     M.runSim(500)
     input('Done...')

@@ -66,13 +66,15 @@ ramp_1 (table) {
     shape:ssCvx, # this states "sphere-swept convex"
     mesh:'ramp1.arr', # this specifies the core of the object
     size:[.03] # the sphere-sweeping radius
-    color:[.8, 0, 0], # the color
+    color:[.8, 0, 1], # the color
     Q:<t(-1.2 0 0) d(-90 0 0 1)> # relative pose: translated by (-0.75, 0, .15)
 }
 
 #shape ramp_2 (table){ type=mesh rel=<T -0.7 0 .35 0.7071 0 0 -0.7071 >  mesh='ramp_2.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.5 0 1]}
 
-shape deflector(table) { type=mesh rel=<T 1.2 0 .3 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
+#shape deflector(table) { type=mesh rel=<T 1.2 0 .3 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
+
+shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
 #1/sqrt2
 shape bin_1 (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
 shape bin_2 (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
