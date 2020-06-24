@@ -357,6 +357,7 @@ class BallDeflector:
 def main():
     M = BallDeflector(perceptionMode='cheat')
 
+    M.runSim(500)
     # Robot B: Pick Deflector Tool
     # M.pickAndPlace("B", "deflector")
 
