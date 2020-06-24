@@ -61,6 +61,15 @@ class BallDeflector:
         self.perceptionMode = perceptionMode
         if perceptionMode == 'komo': self.setupKomoPerception()
 
+    def runSim(self, time_interval):
+        print('########################## Running Sim for ',time_interval ,' units ##########################')
+        for i in range(time_interval):
+            time.sleep(self.tau)
+            self.S.step([], self.tau, ry.ControlMode.none)
+            self.C.setJointState(self.S.get_q())
+            self.V.setConfiguration(self.C)
+            self.t += 1
+
     def setTarget(self, targetFrame):
         self.targetFrame = targetFrame
         #you can also change the shape & size
@@ -188,9 +197,10 @@ class BallDeflector:
             print('t: {:.1f}, True: {}, Estimated: {}'.format(self.t*self.tau, self.targetObj.getPosition(), self.obj.getPosition()))
             self.t += 1
 
-    def openGripper(self, gripper_frame):
+    def openGripper(self, robotName):
+        gripperFrame = robotName + "_gripper"
         print('########################## OPENING ##########################')
-        self.S.openGripper(gripper_frame)
+        self.S.openGripper(gripperFrame)
         self.C.attach("world", self.targetFrame)
         for i in range(50):
             time.sleep(self.tau)
@@ -200,17 +210,19 @@ class BallDeflector:
             self.t += 1
         print('########################## OPENED! ##########################')
 
-    def align(self):
+    def align(self, robotName):
+        gripperCenterFrame = robotName + "_gripperCenter"
+        gripperFingerFrame = robotName + "_finger1"
         print('########################## ALIGNING #########################')
         T = 30
         self.C.setJointState(self.S.get_q())
         komo = self.C.komo_path(1.,T,T*self.tau,True)
-        komo.addObjective([1.], ry.FS.positionDiff, ["A_gripperCenter", self.targetFrame], ry.OT.eq, [2e1], target=[0,0,0.1+0.03])
-        komo.addObjective([1.], ry.FS.vectorZ, ["A_gripperCenter"], ry.OT.eq, scale=[1e1], target=[0,0,1]);
-        komo.addObjective([1.], ry.FS.scalarProductYX, ["A_gripperCenter", self.targetFrame], ry.OT.eq);
-        komo.addObjective([1.], ry.FS.scalarProductYY, ["A_gripperCenter", self.targetFrame], ry.OT.eq);
+        komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, self.targetFrame], ry.OT.eq, [2e1], target=[0,0,0.1+0.03])
+        komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
+        komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
+        komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
         komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
-        komo.addObjective([], ry.FS.qItself, ["A_finger1"], ry.OT.eq, [1e1], order=1)
+        komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
         komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
         komo.optimize()
         for t in range(T):
@@ -223,16 +235,18 @@ class BallDeflector:
 
         print('########################## ALIGNED! #########################')
 
-    def pick(self):
+    def pick(self, robotName):
+        gripperCenterFrame = robotName + "_gripperCenter"
+        gripperFingerFrame = robotName + "_finger1"
         T = 20
         self.C.setJointState(self.S.get_q())
         komo = self.C.komo_path(1.,T,T*self.tau,True)
-        target = self.C.getFrame("A_gripperCenter").getPosition()
+        target = self.C.getFrame(gripperCenterFrame).getPosition()
         target[-1] -= 0.12
-        komo.addObjective([1.], ry.FS.position, ["A_gripperCenter"], ry.OT.eq, [2e1], target=target)
-        komo.addObjective([], ry.FS.quaternion, ["A_gripperCenter"], ry.OT.eq, scale=[1e1], order=1)
+        komo.addObjective([1.], ry.FS.position, [gripperCenterFrame], ry.OT.eq, [2e1], target=target)
+        komo.addObjective([], ry.FS.quaternion, [gripperCenterFrame], ry.OT.eq, scale=[1e1], order=1)
         komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
-        komo.addObjective([], ry.FS.qItself, ["A_finger1"], ry.OT.eq, [1e1], order=1)
+        komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
         komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
         komo.optimize()
         for t in range(T):
@@ -259,7 +273,9 @@ class BallDeflector:
                 return False
 
 
-    def moveToDest(self):
+    def moveToDest(self, robotName):
+        gripperCenterFrame = robotName + "_gripperCenter"
+        gripperFingerFrame = robotName + "_finger1"
         print('########################## LIFTING ##########################')
         T = 30
         self.C.setJointState(self.S.get_q())
@@ -268,9 +284,9 @@ class BallDeflector:
         target[-1] += 0.5
         target[0] -= 0.35
         # target[:2] = (np.random.rand(2)-.5)/3
-        komo.addObjective([1.], ry.FS.position, ["A_gripperCenter"], ry.OT.eq, [2e1], target=target)
+        komo.addObjective([1.], ry.FS.position, [gripperCenterFrame], ry.OT.eq, [2e1], target=target)
         komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
-        komo.addObjective([], ry.FS.qItself, ["A_finger1"], ry.OT.eq, [1e1], order=1)
+        komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
         komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
         komo.optimize()
         for t in range(T):
@@ -303,29 +319,30 @@ class BallDeflector:
         self.C = 0
         self.V = 0
 
-    def pickAndLift(self):
-        self.openGripper("A_gripper")
+    def pickAndLift(self, robotName, targetFrame):
+        self.setTarget(targetFrame)
+        self.openGripper(robotName)
         self.moveToInit()
         self.perception()
-        self.align()
+        self.align(robotName)
 #         input()
-        success = self.pick()
+        success = self.pick(robotName)
         if success:
-            self.moveToDest()
+            self.moveToDest(robotName)
             print('########################### DONE! ###########################')
 #         input()
 
-    def pickAndPlace(self,targetFrame):
+    def pickAndPlace(self, robotName, targetFrame):
         self.setTarget(targetFrame)
-        self.openGripper("A_gripper")
+        self.openGripper(robotName)
         self.moveToInit()
         self.perception()
-        self.align()
+        self.align(robotName)
     #         input()
-        success = self.pick()
+        success = self.pick(robotName)
         if success:
-            self.moveToDest()
-            self.openGripper("A_gripper")
+            self.moveToDest(robotName)
+            self.openGripper(robotName)
             print('########################### DONE! ###########################')
     #         input()
 
@@ -340,17 +357,22 @@ class BallDeflector:
 def main():
     M = BallDeflector(perceptionMode='cheat')
 
+    # Robot B: Pick Deflector Tool
+    # M.pickAndPlace("B", "deflector")
+
     # Robot A: Pick and Place Ball 1 on Ramp
-    M.pickAndPlace("ball1")
+    M.pickAndPlace("A","ball1")
 
     # Robot B: Localize and deflect moving Ball to Target P
     M.deflectBall('ball1','binP')
 
     # Robot A: Pick and Place Ball 2 on Ramp
-    M.pickAndPlace("ball2")
+    M.pickAndPlace("A","ball2")
 
     # Robot B: Localize and deflect moving Ball to Target Q
     M.deflectBall('ball2','binQ')
+
+    M.runSim(500)
     input('Done...')
     M.destroy()
 
