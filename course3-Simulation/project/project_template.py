@@ -199,7 +199,7 @@ class BallDeflector:
 
     def openGripper(self, robotName):
         gripperFrame = robotName + "_gripper"
-        print('===== OPENING =====')
+        print('===== Opening =====')
         self.S.openGripper(gripperFrame)
         self.C.attach("world", self.targetFrame)
         for i in range(50):
@@ -208,7 +208,7 @@ class BallDeflector:
             self.C.setJointState(self.S.get_q())
             self.V.setConfiguration(self.C)
             self.t += 1
-        print('===== OPENED! =====')
+        print('===== Done Opening =====')
 
     def align(self, robotName):
         gripperCenterFrame = robotName + "_gripperCenter"
@@ -237,6 +237,7 @@ class BallDeflector:
 
     def pick(self, robotName):
         gripperCenterFrame = robotName + "_gripperCenter"
+        gripperFrame = robotName + "_gripper"
         gripperFingerFrame = robotName + "_finger1"
         T = 20
         self.C.setJointState(self.S.get_q())
@@ -256,33 +257,33 @@ class BallDeflector:
             self.S.step(q, self.tau, ry.ControlMode.position)
             self.V.setConfiguration(self.C)
             self.t += 1
-        self.S.closeGripper("A_gripper")
-        print('===== CLOSING =====')
+        self.S.closeGripper(gripperFrame)
+        print('===== Closed =====')
         while True:
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
             self.V.setConfiguration(self.C)
             self.t += 1
-            if self.S.getGripperIsGrasping("A_gripper"):
-                print('===== CLOSED! =====')
-                self.C.attach("A_gripper", self.targetFrame)
+            if self.S.getGripperIsGrasping(gripperFrame):
+                print('===== Done Closing =====')
+                self.C.attach(gripperFrame, self.targetFrame)
                 return True
-            if self.S.getGripperWidth("A_gripper")<-0.05 :
-                print('===== FAILED! =====')
+            if self.S.getGripperWidth(gripperFrame)<-0.05 :
+                print('===== Failed to Close =====')
                 return False
 
 
     def moveToDest(self, robotName):
         gripperCenterFrame = robotName + "_gripperCenter"
         gripperFingerFrame = robotName + "_finger1"
-        print('===== LIFTING =====')
+        print('===== Lifting =====')
         T = 30
         self.C.setJointState(self.S.get_q())
         komo = self.C.komo_path(1.,T,T*self.tau,True)
         target = self.C.getFrame("ramp_1").getPosition()
-        target[-1] += 0.5
-        target[0] -= 0.35
+        target[-1] += 1
+        target[0] -= 0
         # target[:2] = (np.random.rand(2)-.5)/3
         komo.addObjective([1.], ry.FS.position, [gripperCenterFrame], ry.OT.eq, [2e1], target=target)
         komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
@@ -296,6 +297,8 @@ class BallDeflector:
             self.V.setConfiguration(self.C)
             self.t += 1
             time.sleep(self.tau)
+
+        print('===== Done Lifting =====')
 
     def moveToInit(self):
         print('===== Go to Initial Pose =====')
@@ -313,6 +316,8 @@ class BallDeflector:
             self.V.setConfiguration(self.C)
             self.t += 1
             time.sleep(self.tau)
+
+        print('===== At Initial Pose =====')
 
     def destroy(self):
         self.S = 0
