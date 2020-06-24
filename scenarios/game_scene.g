@@ -40,7 +40,7 @@ Prefix: "B_"
 Include: 'panda_moveGripper.g'
 
 Prefix!
-        
+
 Edit A_panda_link0 (table) { Q:<t(-1.5 0 .1) d(0 0 0 1)> }
 Edit A_gripper { contact:1 }
 Edit B_panda_link0 (table)  { Q:<t( 1.5 0 .1) d(180 0 0 1)> }
@@ -61,7 +61,14 @@ ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-0.75, 0, 1,  1, 0, 0, 0]> , c
 
 
 
-shape ramp_1 (table){ type=mesh rel=<T -0.75 0 .15 0.7071 0 0 -0.7071 >  mesh='ramp_1.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.8 0 1]  }
+#shape ramp_1 (table){ type=mesh rel=<T -0.75 0 .15 0.7071 0 0 -0.7071 >  mesh='ramp_1.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.8 0 1]  }
+ramp_1 (table) {
+    shape:ssCvx, # this states "sphere-swept convex"
+    mesh:'ramp1.arr', # this specifies the core of the object
+    size:[.03] # the sphere-sweeping radius
+    color:[.8, 0, 0], # the color
+    Q:<t(-1.2 0 0) d(-90 0 0 1)> # relative pose: translated by (-0.75, 0, .15)
+}
 
 #shape ramp_2 (table){ type=mesh rel=<T -0.7 0 .35 0.7071 0 0 -0.7071 >  mesh='ramp_2.stl'  meshscale=0.01  rel_includes_mesh_center,  color:[.5 0 1]}
 
