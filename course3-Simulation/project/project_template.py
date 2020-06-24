@@ -347,18 +347,32 @@ class BallDeflector:
     #         input()
 
 
-    def deflectBall(self,ball_frame,bin_frame):
+    def deflectBall(self,ballFrame,binFrame):
         print('##################### Deflecting',ball_frame,' to ',bin_frame,' ######################')
 
 
-    def pickDeflectorTool(self, delector_frame):
-        print('##################### Picking ',delector_frame,' ######################')
+    def pickDeflectorTool(self, robotName, targetFrame):
+        print('##################### Picking ',targetFrame,' ######################')
+        self.setTarget(targetFrame)
+        self.openGripper(robotName)
+        self.moveToInit()
+        self.perception()
+        self.align(robotName)
+    #         input()
+        success = self.pick(robotName)
+        if success:
+            self.moveToDest(robotName)
+            self.openGripper(robotName)
+            print('########################### DONE! ###########################')
+    #         input()
+
 
 def main():
     M = BallDeflector(perceptionMode='cheat')
 
-    M.runSim(500)
+    # M.runSim(500)
     # Robot B: Pick Deflector Tool
+    M.pickDeflectorTool("B", "deflector")
     # M.pickAndPlace("B", "deflector")
 
     # Robot A: Pick and Place Ball 1 on Ramp
