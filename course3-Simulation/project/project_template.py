@@ -458,6 +458,10 @@ class BallDeflector:
 
         print('===== Done Moving =====')
 
+    def calculateFutureBallPosition(self,ballFrame, timeInterval):
+        position = self.C.getFrame('future_ball').getPosition()
+        return position
+
     def calculateDeflectorInit(self,robotName,startPosition, goalPosition, offset):
         angle = np.arctan2((startPosition[1] - goalPosition[1]),(startPosition[0] - goalPosition[0]))
         initPosition = [0,0,0]
