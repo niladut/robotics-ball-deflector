@@ -81,6 +81,17 @@ class BallDeflector:
         self.obj.setColor([1,1,0,0.9])
         self.obj.setContact(1)
 
+    def createTarget(self, targetFrame, targetPosition, targetQuaternion, color = [1,0,0,0.9]):
+        self.targetFrame = targetFrame
+
+        self.obj = self.C.addFrame(self.targetFrame)
+        self.obj.setShape(ry.ST.sphere, [.05])
+        self.obj.setColor(color)
+        self.obj.setContact(1)
+        self.obj.setPosition(targetPosition)
+        self.obj.setQuaternion(targetQuaternion)
+        self.V.setConfiguration(self.C)
+
     def setupSim(self):
         #-- REAL WORLD configuration, which is attached to the physics engine
         self.RealWorld = ry.Config()
@@ -88,7 +99,7 @@ class BallDeflector:
 
         testBall = self.RealWorld.getFrame('ball3')
         # objectPosition = self.testBall.getPosition()
-        testBall.setPosition([1, 0, .5])
+        # testBall.setPosition([1, 0, .5])
 
         # Configure Physics Engine
         self.S = self.RealWorld.simulation(ry.SimulatorEngine.physx, True)
@@ -414,7 +425,7 @@ class BallDeflector:
         # targetPose[-1] += -0.55
         # targetPose[0] -= 0
         # self.moveToDest(robotName,targetPose)
-    def moveGripper(self, robotName, targetFrame, targetOffset):
+    def moveGripper(self, robotName, targetFrame, targetOffset, targetOrientation):
         gripperCenterFrame = robotName + "_gripperCenter"
         gripperFingerFrame = robotName + "_finger1"
         print('===== Move Robot ',robotName,' with gripper frame ', gripperCenterFrame, ' to targetFrame ',targetFrame)
@@ -428,14 +439,14 @@ class BallDeflector:
         T = 30
         self.C.setJointState(self.S.get_q())
         komo = self.C.komo_path(1.,T,T*self.tau,True)
-        komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, self.targetFrame], ry.OT.eq, [2e1], target=targetOffset)
-        komo.addObjective([1.], ry.FS.quaternion, [gripperCenterFrame], ry.OT.eq, target=[ 1, 0,0,0])
+        komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, targetFrame], ry.OT.eq, [2e1], target=targetOffset)
+        komo.addObjective([1.], ry.FS.quaternion, [gripperCenterFrame], ry.OT.eq, target=targetOrientation)
         komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
-        komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
-        komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
-        komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
-        komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
-        komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
+        # komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
+        # komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
+        # komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
+        # komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
+        # komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
         komo.optimize()
         for t in range(T):
             self.C.setFrameState(komo.getConfiguration(t))
@@ -447,17 +458,55 @@ class BallDeflector:
 
         print('===== Done Moving =====')
 
+    def calculateDeflectorInit(self,robotName,startPosition, goalPosition, offset):
+        angle = np.arctan2((startPosition[1] - goalPosition[1]),(startPosition[0] - goalPosition[0]))
+        initPosition = [0,0,0]
+        initPosition[0] = startPosition[0] + offset*np.cos(angle)
+        initPosition[1] = startPosition[1] + offset*np.sin(angle)
+        initPosition[2] = 0.3
+        print('Init Pos : ',initPosition, ' , Ang: ',angle)
+        return initPosition, angle
+
+def euler_to_quaternion(roll, pitch, yaw):
+    qx = np.sin(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) - np.cos(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
+    qy = np.cos(roll/2) * np.sin(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.cos(pitch/2) * np.sin(yaw/2)
+    qz = np.cos(roll/2) * np.cos(pitch/2) * np.sin(yaw/2) - np.sin(roll/2) * np.sin(pitch/2) * np.cos(yaw/2)
+    qw = np.cos(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
+
+    return [qx, qy, qz, qw]
+
+
 def main():
     M = BallDeflector()
 
     # Test Arm Movement
-    M.runSim(200)
+    # M.runSim(500)
 
-    M.setTarget('ball3')
-    M.perception()
+    # M.setTarget('future_ball')
+    # M.perception()
     # M.moveGripper('B','deflector',[0,0,0])
-    M.moveGripper('B','ball3',[0,-0.1,0.55])
+    M.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
+    # M.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
+    goalPos = M.RealWorld.getFrame('bin_2').getPosition()
+    goalPos[2] = 0.3
+    M.createTarget('bin_2',goalPos,[0,0,0,1])
+    startPosition = M.C.getFrame('future_ball').getPosition()
+    goalPosition = M.C.getFrame('bin_2').getPosition()
+    offset = 0.3
+    initPosition, angle = M.calculateDeflectorInit('B',startPosition, goalPosition, offset)
+    q = euler_to_quaternion(angle,0,0)
+    print('Init Pos : ',initPosition, ' , quaternion: ',q)
+    M.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
+    M.moveGripper('B','init',[0,0,0.62],q)
 
+    M.runSim(500)
+    M.moveGripper('B','future_ball',[0,0,0.62],q)
+
+
+    # M.runSim(600)
+    # M.setTarget('ball3')
+    # M.perception()
+    # M.moveGripper('B','ball3',[0,0,0.62],[ -0.383, 0,0,0.924])
     # Robot B: Pick Deflector Tool
     # M.pickAndPlace("B", "deflector")
 
@@ -476,8 +525,7 @@ def main():
     #
     # # Robot B: Localize and deflect moving Ball to Target Q
     # M.deflectBall('ball2','binQ')
-
-    M.runSim(500)
+    M.runSim(1000)
     input('Done...')
     M.destroy()
 
