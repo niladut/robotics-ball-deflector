@@ -88,7 +88,7 @@ class BallDeflector:
 
         testBall = self.RealWorld.getFrame('ball3')
         # objectPosition = self.testBall.getPosition()
-        testBall.setPosition([0.7, 0, .5])
+        testBall.setPosition([1, 0, .5])
 
         # Configure Physics Engine
         self.S = self.RealWorld.simulation(ry.SimulatorEngine.physx, True)
@@ -429,6 +429,7 @@ class BallDeflector:
         self.C.setJointState(self.S.get_q())
         komo = self.C.komo_path(1.,T,T*self.tau,True)
         komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, self.targetFrame], ry.OT.eq, [2e1], target=targetOffset)
+        komo.addObjective([1.], ry.FS.quaternion, [gripperCenterFrame], ry.OT.eq, target=[ 1, 0,0,0])
         komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
         komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
         komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
@@ -450,11 +451,12 @@ def main():
     M = BallDeflector()
 
     # Test Arm Movement
-    M.runSim(50)
+    M.runSim(200)
 
     M.setTarget('ball3')
     M.perception()
-    M.moveGripper('B','ball3',[0,-0.1,0.75])
+    # M.moveGripper('B','deflector',[0,0,0])
+    M.moveGripper('B','ball3',[0,-0.1,0.55])
 
     # Robot B: Pick Deflector Tool
     # M.pickAndPlace("B", "deflector")
