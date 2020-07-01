@@ -406,21 +406,24 @@ class BallDeflector:
 
         self.moveToDest(robotName,targetPose)
 
-    def hitBall(self, robotName, targetFrame):
-        print('===== Hitting ',targetFrame,' =====')
-    #     self.setTarget(targetFrame)
-    #     self.openGripper(robotName)
-    #     self.moveToInit()
-    #     self.perception()
-    #     self.align(robotName)
-    # #         input()
-    #     success = self.pick(robotName)
-    #     if success:
-    #         self.moveToDest(robotName)
-    #         self.openGripper(robotName)
-    #         print('====== Done ======')
-    #         input()
+    def hitBall(self, robotName, ballFrame, goalFrame):
+        print('===== Hitting ',ballFrame,' =====')
+        self.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
+        # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
+        goalPos = self.RealWorld.getFrame('bin_2').getPosition()
+        goalPos[2] = 0.3
+        self.createTarget('bin_2',goalPos,[0,0,0,1])
+        startPosition = self.C.getFrame('future_ball').getPosition()
+        goalPosition = self.C.getFrame('bin_2').getPosition()
+        offset = 0.3
+        initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
+        q = euler_to_quaternion(angle,0,0)
+        print('Init Pos : ',initPosition, ' , quaternion: ',q)
+        self.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
+        self.moveGripper('B','init',[0,0,0.62],q)
 
+        self.runSim(500)
+        self.moveGripper('B','future_ball',[0,0,0.62],q)
         # targetPose = self.C.getFrame(targetFrame).getPosition()
         # targetPose[-1] += -0.55
         # targetPose[0] -= 0
@@ -485,26 +488,27 @@ def main():
 
     # Test Arm Movement
     # M.runSim(500)
+    M.hitBall('B', 'ball3', 'bin_2')
 
     # M.setTarget('future_ball')
     # M.perception()
     # M.moveGripper('B','deflector',[0,0,0])
-    M.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
-    # M.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
-    goalPos = M.RealWorld.getFrame('bin_2').getPosition()
-    goalPos[2] = 0.3
-    M.createTarget('bin_2',goalPos,[0,0,0,1])
-    startPosition = M.C.getFrame('future_ball').getPosition()
-    goalPosition = M.C.getFrame('bin_2').getPosition()
-    offset = 0.3
-    initPosition, angle = M.calculateDeflectorInit('B',startPosition, goalPosition, offset)
-    q = euler_to_quaternion(angle,0,0)
-    print('Init Pos : ',initPosition, ' , quaternion: ',q)
-    M.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
-    M.moveGripper('B','init',[0,0,0.62],q)
-
-    M.runSim(500)
-    M.moveGripper('B','future_ball',[0,0,0.62],q)
+    # M.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
+    # # M.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
+    # goalPos = M.RealWorld.getFrame('bin_2').getPosition()
+    # goalPos[2] = 0.3
+    # M.createTarget('bin_2',goalPos,[0,0,0,1])
+    # startPosition = M.C.getFrame('future_ball').getPosition()
+    # goalPosition = M.C.getFrame('bin_2').getPosition()
+    # offset = 0.3
+    # initPosition, angle = M.calculateDeflectorInit('B',startPosition, goalPosition, offset)
+    # q = euler_to_quaternion(angle,0,0)
+    # print('Init Pos : ',initPosition, ' , quaternion: ',q)
+    # M.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
+    # M.moveGripper('B','init',[0,0,0.62],q)
+    #
+    # M.runSim(500)
+    # M.moveGripper('B','future_ball',[0,0,0.62],q)
 
 
     # M.runSim(600)
