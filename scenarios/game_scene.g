@@ -84,8 +84,11 @@ Include: 'bin.g'
 Prefix: "B_"
 Include: 'bin.g'
 
-Edit A_top (table) { Q:<t(.1 -1.5 .3) d(-135 0 0 1)> ,color:[1 .5 1],}
-Edit B_top (table) { Q:<t(.1 1.5 .3) d(135 0 0 1)> ,color:[.5 1 .5]}
+Edit A_bin_base (table) { Q:<t(.1 -1.5 0) d(-135 0 0 1)> ,color:[1 .5 1]}
+Edit B_bin_base (table) { Q:<t(.1 1.5 0) d(135 0 0 1)> ,color:[.5 1 .5]}
+
+Edit A_top (table) { color:[1 .5 1]}
+Edit B_top (table) { color:[.5 1 .5]}
 
 #shape bin_1 (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
 #shape bin_2 (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
