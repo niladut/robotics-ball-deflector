@@ -462,7 +462,27 @@ class BallDeflector:
         print('===== Done Moving =====')
 
     def calculateFutureBallPosition(self,ballFrame, timeInterval):
-        position = self.C.getFrame('future_ball').getPosition()
+        t = 100
+        p1 = self.RealWorld.getFrame(ballFrame).getPosition()
+        self.runSim(t)
+        p2 = self.RealWorld.getFrame(ballFrame).getPosition()
+
+        [vx,vy] = [(p2[0] - p1[0])/t, (p2[1] - p1[1])/t ]
+
+        v_abs = vx*vx + vy*vy
+        distance = v_abs * timeInterval
+
+        print('p1 : ',p1)
+        print('p2 : ',p2)
+        print('v_abs : ',v_abs)
+        print('distance : ',distance)
+
+        angle = np.arctan2((p2[1] - p1[1]),(p2[0] - p1[0]))
+        position = [0,0,0]
+        position[0] = p2[0] + distance*np.cos(angle)
+        position[1] = p2[1] + distance*np.sin(angle)
+        position[2] = p2[2]
+
         return position
 
     def calculateDeflectorInit(self,robotName,startPosition, goalPosition, offset):
@@ -485,10 +505,13 @@ def euler_to_quaternion(roll, pitch, yaw):
 
 def main():
     M = BallDeflector()
+    M.runSim(200)
+    position = M.calculateFutureBallPosition('ball3', 300)
+    M.createTarget('future_ball',position,[0,0,0,1])
 
     # Test Arm Movement
     # M.runSim(500)
-    M.hitBall('B', 'ball3', 'bin_2')
+    # M.hitBall('B', 'ball3', 'bin_2')
 
     # M.setTarget('future_ball')
     # M.perception()
@@ -533,7 +556,7 @@ def main():
     #
     # # Robot B: Localize and deflect moving Ball to Target Q
     # M.deflectBall('ball2','binQ')
-    M.runSim(1000)
+    # M.runSim(1000)
     input('Done...')
     M.destroy()
 
