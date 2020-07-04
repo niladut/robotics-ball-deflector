@@ -461,19 +461,20 @@ class BallDeflector:
 
         print('===== Done Moving =====')
 
-    def calculateFutureBallPosition(self,ballFrame, timeInterval):
-        t = 100
+    def calculateFutureBallPosition(self,ballFrame, timeInterval, observeTime = 10):
+        # t = observeTime
         p1 = self.RealWorld.getFrame(ballFrame).getPosition()
-        self.runSim(t)
+        self.runSim(observeTime)
         p2 = self.RealWorld.getFrame(ballFrame).getPosition()
 
-        [vx,vy] = [(p2[0] - p1[0])/t, (p2[1] - p1[1])/t ]
+        [vx,vy] = [(p2[0] - p1[0])/observeTime, (p2[1] - p1[1])/observeTime ]
 
-        v_abs = vx*vx + vy*vy
-        distance = v_abs * timeInterval
+        v_abs = np.sqrt(vx*vx + vy*vy)
+        distance = v_abs * (timeInterval - observeTime)
 
         print('p1 : ',p1)
         print('p2 : ',p2)
+        print('vx,vy : ',[vx,vy])
         print('v_abs : ',v_abs)
         print('distance : ',distance)
 
@@ -482,6 +483,9 @@ class BallDeflector:
         position[0] = p2[0] + distance*np.cos(angle)
         position[1] = p2[1] + distance*np.sin(angle)
         position[2] = p2[2]
+
+        print('angle : ',angle)
+        print('future pos : ',position)
 
         return position
 
@@ -506,8 +510,10 @@ def euler_to_quaternion(roll, pitch, yaw):
 def main():
     M = BallDeflector()
     M.runSim(200)
-    position = M.calculateFutureBallPosition('ball3', 300)
-    M.createTarget('future_ball',position,[0,0,0,1])
+    for i in range(1,10):
+
+        position = M.calculateFutureBallPosition('ball3', 25*i)
+        M.createTarget('future_ball'+str(i),position,[0,0,0,1])
 
     # Test Arm Movement
     # M.runSim(500)
