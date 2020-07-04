@@ -47,7 +47,7 @@ Edit B_panda_link0 (table)  { Q:<t( 1.5 0 .1) d(180 0 0 1)> }
 Edit R_gripper { contact:1 }
 
 camera(world){
-    Q:<t(-0.01 -.2 1.8) d(30 1 0 0)>,
+    Q:<t(1 0 2) d(30 1 90 0)>,
     shape:marker, size:[.1],
     focalLength:0.895, width:640, height:360, zRange:[.5 100]
 }
@@ -87,8 +87,6 @@ Include: 'bin.g'
 Edit A_bin_base (table) { Q:<t(.1 -1.5 0) d(-135 0 0 1)> ,color:[1 .5 1]}
 Edit B_bin_base (table) { Q:<t(.1 1.5 0) d(135 0 0 1)> ,color:[.5 1 .5]}
 
-Edit A_top (table) { color:[1 .5 1]}
-Edit B_top (table) { color:[.5 1 .5]}
 
 #shape bin_1 (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
 #shape bin_2 (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
