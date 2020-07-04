@@ -76,6 +76,17 @@ ramp_1 (table) {
 
 shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
 #1/sqrt2
-shape bin_1 (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
-shape bin_2 (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
+
+
+Prefix: "A_"
+Include: 'bin.g'
+
+Prefix: "B_"
+Include: 'bin.g'
+
+Edit A_top (table) { Q:<t(.1 -1.5 .3) d(-135 0 0 1)> ,color:[1 .5 1],}
+Edit B_top (table) { Q:<t(.1 1.5 .3) d(135 0 0 1)> ,color:[.5 1 .5]}
+
+#shape bin_1 (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
+#shape bin_2 (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
 #shape bin_3 (table){ type=mesh rel=<T 0 0 .15 0.7071 0 0 -0.7071 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
