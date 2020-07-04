@@ -408,7 +408,7 @@ class BallDeflector:
 
     def hitBall(self, robotName, ballFrame, goalFrame):
         print('===== Hitting ',ballFrame,' =====')
-        self.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
+        # self.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
         # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
         goalPos = self.RealWorld.getFrame('bin_2').getPosition()
         goalPos[2] = 0.3
@@ -511,13 +511,12 @@ def main():
     M = BallDeflector()
     M.runSim(200)
     for i in range(1,10):
-
-        position = M.calculateFutureBallPosition('ball3', 25*i)
+        position = M.calculateFutureBallPosition('ball3', 25*i,1)
         M.createTarget('future_ball'+str(i),position,[0,0,0,1])
 
     # Test Arm Movement
     # M.runSim(500)
-    # M.hitBall('B', 'ball3', 'bin_2')
+    M.hitBall('B', 'ball3', 'bin_2')
 
     # M.setTarget('future_ball')
     # M.perception()
