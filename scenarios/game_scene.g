@@ -76,6 +76,58 @@ ramp_1 (table) {
 
 shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
 #1/sqrt2
-shape bin_1 (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
-shape bin_2 (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
+#shape bin_1 (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
+#shape bin_2 (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
 #shape bin_3 (table){ type=mesh rel=<T 0 0 .15 0.7071 0 0 -0.7071 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }
+
+world {}
+
+top1 (world){
+    shape:ssBox, Q:<t( .1 -1.5 .15) d(0 0 0 1)>, size:[.5 .5 .1 .02], color:[1 1 .5]
+    contact, logical:{ }
+    friction:1
+}
+
+bk_wall1 (top1){
+    shape:ssBox, Q:<t(.1 1.5 .15) d(90 0 90 1)>, size:[.5 .5 .1 .02], color:[1 1 .5]
+    contact, logical:{ }
+    friction:1
+}
+
+rg_wall1 (top1){
+    shape:ssBox, Q:<t(0 .25 -.25) d(90 90 0 1)>, size:[.5 .5 .1 .02], color:[1 1 .5]
+    contact, logical:{ }
+    friction:1
+}
+
+lf_wall1 (top1){
+    shape:ssBox, Q:<t(0 -.25 -.25) d(90 90 0 1)>, size:[.5 .5 .1 .02], color:[1 1 .5]
+    contact, logical:{ }
+    friction:1
+}
+
+world {}
+
+top2 (world){
+    shape:ssBox, Q:<t(0 0 .5) d(0 0 0 1)>, size:[.5 .5 .1 .02], color:[1 1 .5]
+    contact, logical:{ }
+    friction:1
+}
+
+bk_wall2 (top2){
+    shape:ssBox, Q:<t(.25 0 -.25) d(90 0 90 1)>, size:[.5 .5 .1 .02], color:[1 1 .5]
+    contact, logical:{ }
+    friction:1
+}
+
+rg_wall2 (top2){
+    shape:ssBox, Q:<t(0 .25 -.25) d(90 90 0 1)>, size:[.5 .5 .1 .02], color:[1 1 .5]
+    contact, logical:{ }
+    friction:1
+}
+
+lf_wall2 (top2){
+    shape:ssBox, Q:<t(0 -.25 -.25) d(90 90 0 1)>, size:[.5 .5 .1 .02], color:[1 1 .5]
+    contact, logical:{ }
+    friction:1
+}
