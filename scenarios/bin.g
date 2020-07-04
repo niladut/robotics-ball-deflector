@@ -13,13 +13,13 @@ bk_wall (top){
 }
 
 rg_wall (top){
-    shape:ssBox, Q:<t(.1 -1.5 .15) d(90 0 0 1)>, size:[1. .5 .1 .02], color:[1 1 .5]
+    shape:ssBox, Q:<t(.25 0 -.25) d(90 90 0 1)>, size:[1. .5 .1 .02], color:[1 1 .5]
     contact, logical:{ }
     friction:1
 }
 
 lf_wall (top){
-    shape:ssBox, Q:<t(.1 -1.5 .15) d(90 0 0 1)>, size:[1. .5 .1 .02], color:[1 1 .5]
+    shape:ssBox, Q:<t(-.25 0 .25) d(90 90 0 1)>, size:[1. .5 .1 .02], color:[1 1 .5]
     contact, logical:{ }
     friction:1
 }
