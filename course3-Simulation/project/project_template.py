@@ -81,7 +81,7 @@ class BallDeflector:
         self.obj.setColor([1,1,0,0.9])
         self.obj.setContact(1)
 
-    def createTarget(self, targetFrame, targetPosition, targetQuaternion, color = [1,0,0,0.9]):
+    def createTarget(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [1,0,0,0.9]):
         self.targetFrame = targetFrame
 
         self.obj = self.C.addFrame(self.targetFrame)
@@ -406,15 +406,39 @@ class BallDeflector:
 
         self.moveToDest(robotName,targetPose)
 
+    def movingBallPerception(self, ballFrame, observeTime, type='cheat'):
+        if(type == 'cheat'):
+            p1 = self.RealWorld.getFrame(ballFrame).getPosition()
+            self.runSim(observeTime)
+            p2 = self.RealWorld.getFrame(ballFrame).getPosition()
+        else:
+            # TODO: Add OpenCV Ball Position Perception
+            p1 = [0,0,0]
+            p2 = [0,0,0]
+
+        return p1,p2
+
     def hitBall(self, robotName, ballFrame, goalFrame):
         print('===== Hitting ',ballFrame,' =====')
+        dt = 25
+        steps = 12
+        total_time = dt*steps
+        observeTime = 1
+        for i in range(1,steps+1):
+            p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+            position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
+            self.createTarget('ball_'+str(i),position,[0,0,0,1])
+
+        p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+        position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
+        self.createTarget('future_ball',position,color = [0,1,0,0.9])
         # self.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
         # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
         goalPos = self.RealWorld.getFrame('bin_2').getPosition()
         goalPos[2] = 0.3
-        self.createTarget('bin_2',goalPos,[0,0,0,1])
+        self.createTarget('goal',goalPos,[0,0,0,1])
         startPosition = self.C.getFrame('future_ball').getPosition()
-        goalPosition = self.C.getFrame('bin_2').getPosition()
+        goalPosition = self.C.getFrame('goal').getPosition()
         offset = 0.3
         initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
         q = euler_to_quaternion(angle,0,0)
@@ -422,7 +446,7 @@ class BallDeflector:
         self.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
         self.moveGripper('B','init',[0,0,0.62],q)
 
-        self.runSim(500)
+        self.runSim(total_time)
         self.moveGripper('B','future_ball',[0,0,0.62],q)
         # targetPose = self.C.getFrame(targetFrame).getPosition()
         # targetPose[-1] += -0.55
@@ -461,11 +485,8 @@ class BallDeflector:
 
         print('===== Done Moving =====')
 
-    def calculateFutureBallPosition(self,ballFrame, timeInterval, observeTime = 10):
+    def calculateFuturePosition(self,p1,p2, timeInterval, observeTime = 10):
         # t = observeTime
-        p1 = self.RealWorld.getFrame(ballFrame).getPosition()
-        self.runSim(observeTime)
-        p2 = self.RealWorld.getFrame(ballFrame).getPosition()
 
         [vx,vy] = [(p2[0] - p1[0])/observeTime, (p2[1] - p1[1])/observeTime ]
 
@@ -510,13 +531,9 @@ def euler_to_quaternion(roll, pitch, yaw):
 def main():
     M = BallDeflector()
     M.runSim(200)
-    for i in range(1,10):
-        position = M.calculateFutureBallPosition('ball3', 25*i,1)
-        M.createTarget('future_ball'+str(i),position,[0,0,0,1])
-
     # Test Arm Movement
-    # M.runSim(500)
     M.hitBall('B', 'ball3', 'bin_2')
+    M.runSim(500)
 
     # M.setTarget('future_ball')
     # M.perception()
