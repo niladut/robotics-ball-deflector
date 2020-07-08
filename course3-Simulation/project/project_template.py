@@ -510,7 +510,7 @@ class BallDeflector:
         return position
 
     def calculateDeflectorInit(self,robotName,startPosition, goalPosition, offset):
-        angle = np.arctan2((goalPosition[1] - startPosition[1]),(goalPosition[0] - startPosition[0] ))
+        angle = np.arctan2((startPosition[1] - goalPosition[1]),(startPosition[0] - goalPosition[0]))
         initPosition = [0,0,0]
         initPosition[0] = startPosition[0] + offset*np.cos(angle)
         initPosition[1] = startPosition[1] + offset*np.sin(angle)
@@ -549,7 +549,7 @@ def gripperOrientaionTest():
     ballPosition = [1, 0, .3]
     M.createTarget('testball',ballPosition, [0,0,0,1],[0,1,1,0.7])
     targetOffset = [0,0,0.62]
-    degrees = -58.59447385472987
+    degrees = 150 #-58.59447385472987
     targetOrientation = euler_to_quaternion(degrees*np.pi/180,0,0)
     M.moveGripper('B', 'testball', targetOffset, targetOrientation)
     input('Done...')
@@ -557,8 +557,8 @@ def gripperOrientaionTest():
 
 def main():
     # hitBallTest()
-    # hitBallTestDebug()
-    gripperOrientaionTest()
+    hitBallTestDebug()
+    # gripperOrientaionTest()
 
 if __name__ == "__main__":
     main()
