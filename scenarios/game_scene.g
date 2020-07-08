@@ -76,6 +76,7 @@ ramp_1 (table) {
 
 shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
 #1/sqrt2
+#deflector_side (deflector) {shape:ssBox, Q:<t(-2 0 .1)>, size:[.1 0.1 .01 .01], color:[.7 .5 .5]}
 
 
 Prefix: "A_"

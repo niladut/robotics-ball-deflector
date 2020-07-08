@@ -442,7 +442,7 @@ class BallDeflector:
         offset = 0.3
         initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
         q = euler_to_quaternion(angle,0,0)
-        print('Init Pos : ',initPosition, ' , quaternion: ',q)
+        print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
         self.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
         self.moveGripper('B','init',[0,0,0.62],q)
         self.runSim(total_time)
@@ -504,18 +504,18 @@ class BallDeflector:
         position[1] = p2[1] + distance*np.sin(angle)
         position[2] = p2[2]
 
-        print('angle : ',angle)
+        print('future angle : ',angle, )
         print('future pos : ',position)
 
         return position
 
     def calculateDeflectorInit(self,robotName,startPosition, goalPosition, offset):
-        angle = np.arctan2((startPosition[1] - goalPosition[1]),(startPosition[0] - goalPosition[0]))
+        angle = np.arctan2((goalPosition[1] - startPosition[1]),(goalPosition[0] - startPosition[0] ))
         initPosition = [0,0,0]
         initPosition[0] = startPosition[0] + offset*np.cos(angle)
         initPosition[1] = startPosition[1] + offset*np.sin(angle)
         initPosition[2] = 0.3
-        print('Init Pos : ',initPosition, ' , Ang: ',angle)
+        print('Deflector Init Pos : ',initPosition, ' , Ang: ',angle , ' rad = ', angle*180/np.pi, ' degrees')
         return initPosition, angle
 
 def euler_to_quaternion(roll, pitch, yaw):
@@ -526,60 +526,39 @@ def euler_to_quaternion(roll, pitch, yaw):
 
     return [qx, qy, qz, qw]
 
-
-def main():
+def hitBallTest():
     M = BallDeflector()
     M.runSim(200)
     # Test Arm Movement
     M.hitBall('B', 'ball3', 'B_bin_base')
     M.runSim(700)
-
-    # M.setTarget('future_ball')
-    # M.perception()
-    # M.moveGripper('B','deflector',[0,0,0])
-    # M.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
-    # # M.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
-    # goalPos = M.RealWorld.getFrame('B_bin_base').getPosition()
-    # goalPos[2] = 0.3
-    # M.createTarget('B_bin_base',goalPos,[0,0,0,1])
-    # startPosition = M.C.getFrame('future_ball').getPosition()
-    # goalPosition = M.C.getFrame('B_bin_base').getPosition()
-    # offset = 0.3
-    # initPosition, angle = M.calculateDeflectorInit('B',startPosition, goalPosition, offset)
-    # q = euler_to_quaternion(angle,0,0)
-    # print('Init Pos : ',initPosition, ' , quaternion: ',q)
-    # M.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
-    # M.moveGripper('B','init',[0,0,0.62],q)
-    #
-    # M.runSim(500)
-    # M.moveGripper('B','future_ball',[0,0,0.62],q)
-
-
-    # M.runSim(600)
-    # M.setTarget('ball3')
-    # M.perception()
-    # M.moveGripper('B','ball3',[0,0,0.62],[ -0.383, 0,0,0.924])
-    # Robot B: Pick Deflector Tool
-    # M.pickAndPlace("B", "deflector")
-
-    # Robot A: Pick and Place Ball 1 on Ramp
-    # M.pickAndPlace("A","ball1")
-    # M.runSim(300)
-
-    # Robot B: Localize and deflect moving Ball to Target P
-    # M.deflectBall('B','ball3','binP')
-    # M.deflectBall('B','ball3','binP')
-    # M.runSim(500)
-    # M.hitBall("B", "ball1")
-    #
-    # # Robot A: Pick and Place Ball 2 on Ramp
-    # M.pickAndPlace("A","ball2")
-    #
-    # # Robot B: Localize and deflect moving Ball to Target Q
-    # M.deflectBall('ball2','binQ')
-    # M.runSim(1000)
     input('Done...')
     M.destroy()
+
+def hitBallTestDebug():
+    M = BallDeflector()
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', 'ball3', 'B_bin_base')
+    # M.runSim(700)
+    input('Done...')
+    M.destroy()
+
+def gripperOrientaionTest():
+    M = BallDeflector()
+    ballPosition = [1, 0, .3]
+    M.createTarget('testball',ballPosition, [0,0,0,1],[0,1,1,0.7])
+    targetOffset = [0,0,0.62]
+    degrees = -58.59447385472987
+    targetOrientation = euler_to_quaternion(degrees*np.pi/180,0,0)
+    M.moveGripper('B', 'testball', targetOffset, targetOrientation)
+    input('Done...')
+    M.destroy()
+
+def main():
+    # hitBallTest()
+    # hitBallTestDebug()
+    gripperOrientaionTest()
 
 if __name__ == "__main__":
     main()
