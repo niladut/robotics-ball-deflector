@@ -64,6 +64,9 @@ class BallDeflector:
     def runSim(self, time_interval):
         print('===== Running Sim for ',time_interval ,' units =====')
         for i in range(time_interval):
+            if i % 50 == 0 :
+                position = self.RealWorld.getFrame('ball3').getPosition()
+                self.createTarget('real_ball',position,[0,0,0,1],[0,0,1,0.8])
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
@@ -420,7 +423,53 @@ class BallDeflector:
 
     def hitBall(self, robotName, ballFrame, goalFrame):
         print('===== Hitting ',ballFrame,' =====')
-        dt = 25
+        dt = 20
+        steps = 12
+        total_time = dt*steps - 30
+        observeTime = 1
+        for i in range(1,steps+1):
+            p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+            position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
+            self.createTarget('ball_'+str(i),position,[0,0,0,1])
+
+        p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+        position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
+        self.createTarget('future_ball',position,color = [0,1,0,0.9])
+        # self.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
+        # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
+        goalPos = self.RealWorld.getFrame(goalFrame).getPosition()
+        goalPos[2] = 0.3
+        self.createTarget('goal',goalPos,[0,0,0,1])
+        startPosition = self.C.getFrame('future_ball').getPosition()
+        goalPosition = self.C.getFrame('goal').getPosition()
+        offset = 0.5
+        initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
+
+        steps = 12
+        dstep = 0.1
+        for i in range(1,steps+1):
+            position = [0,0,0]
+            position[0] = startPosition[0] - i*dstep*np.cos(angle)
+            position[1] = startPosition[1] - i*dstep*np.sin(angle)
+            position[2] = 0.3
+            self.createTarget('fball_'+str(i),position,[0,0,0,1])
+
+        # angle = angle - np.pi/2
+        # angle= angle/2
+        q = euler_to_quaternion(angle,0,0)
+        print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
+        self.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
+        self.moveGripper('B','init',[0,0,0.62],q)
+        self.runSim(total_time)
+        self.moveGripper('B','future_ball',[0,0,0.62],q)
+        # targetPose = self.C.getFrame(targetFrame).getPosition()
+        # targetPose[-1] += -0.55
+        # targetPose[0] -= 0
+        # self.moveToDest(robotName,targetPose)
+
+    def hitBallAng(self, robotName, ballFrame, goalFrame):
+        print('===== Hitting ',ballFrame,' =====')
+        dt = 20
         steps = 12
         total_time = dt*steps
         observeTime = 1
@@ -434,13 +483,25 @@ class BallDeflector:
         self.createTarget('future_ball',position,color = [0,1,0,0.9])
         # self.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
         # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
-        goalPos = self.RealWorld.getFrame('B_bin_base').getPosition()
+        goalPos = self.RealWorld.getFrame(goalFrame).getPosition()
         goalPos[2] = 0.3
         self.createTarget('goal',goalPos,[0,0,0,1])
         startPosition = self.C.getFrame('future_ball').getPosition()
         goalPosition = self.C.getFrame('goal').getPosition()
-        offset = 0.3
+        offset = 0.5
         initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
+
+        steps = 12
+        dstep = 0.1
+        for i in range(1,steps+1):
+            position = [0,0,0]
+            position[0] = startPosition[0] - i*dstep*np.cos(angle)
+            position[1] = startPosition[1] - i*dstep*np.sin(angle)
+            position[2] = 0.3
+            self.createTarget('fball_'+str(i),position,[0,0,0,1])
+
+        # angle = angle - np.pi/2
+        angle = angle/2
         q = euler_to_quaternion(angle,0,0)
         print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
         self.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
@@ -451,6 +512,9 @@ class BallDeflector:
         # targetPose[-1] += -0.55
         # targetPose[0] -= 0
         # self.moveToDest(robotName,targetPose)
+
+
+
     def moveGripper(self, robotName, targetFrame, targetOffset, targetOrientation):
         gripperCenterFrame = robotName + "_gripperCenter"
         gripperFingerFrame = robotName + "_finger1"
@@ -470,7 +534,7 @@ class BallDeflector:
         komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
         # komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
         # komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
-        # komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
+        komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
         # komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
         # komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
         komo.optimize()
@@ -481,6 +545,42 @@ class BallDeflector:
             self.S.step(q, self.tau, ry.ControlMode.position)
             self.V.setConfiguration(self.C)
             self.t += 1
+
+        print('===== Done Moving =====')
+
+    def moveGripperIK(self, robotName, targetFrame, targetOffset, targetOrientation):
+        gripperCenterFrame = robotName + "_gripperCenter"
+        gripperFingerFrame = robotName + "_finger1"
+        print('===== Move Robot ',robotName,' with gripper frame ', gripperCenterFrame, ' to targetFrame ',targetFrame)
+
+        # self.setTarget(targetFrame)
+        #
+        # self.def = self.C.addFrame(targetFrame)
+        # self.def.setShape(ry.ST.sphere, [.05])
+        # self.def.setColor([1,1,0,0.9])
+
+        T = 30
+        self.C.setJointState(self.S.get_q())
+        komo = self.C.komo_IK(True)
+        # komo.addObjective(type=ry.OT.eq, feature=ry.FS.positionDiff, frames=[gripperCenterFrame, targetFrame],target=targetOffset)
+        komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, targetFrame], ry.OT.eq, [2e1], target=targetOffset)
+        komo.addObjective([1.], ry.FS.quaternion, [gripperCenterFrame], ry.OT.eq, target=targetOrientation)
+        # komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
+        # komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
+        # komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
+        # komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
+        # komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
+        # komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
+        komo.optimize()
+        self.C.setFrameState(komo.getConfiguration(0))
+        self.V.setConfiguration(self.C)
+        # for t in range(T):
+        #     self.C.setFrameState(komo.getConfiguration(t))
+        #     q = self.C.getJointState()
+        #     time.sleep(self.tau)
+        #     self.S.step(q, self.tau, ry.ControlMode.position)
+        #     self.V.setConfiguration(self.C)
+        #     self.t += 1
 
         print('===== Done Moving =====')
 
@@ -511,11 +611,12 @@ class BallDeflector:
 
     def calculateDeflectorInit(self,robotName,startPosition, goalPosition, offset):
         angle = np.arctan2((startPosition[1] - goalPosition[1]),(startPosition[0] - goalPosition[0]))
+        # angle = 0
         initPosition = [0,0,0]
         initPosition[0] = startPosition[0] + offset*np.cos(angle)
         initPosition[1] = startPosition[1] + offset*np.sin(angle)
         initPosition[2] = 0.3
-        print('Deflector Init Pos : ',initPosition, ' , Ang: ',angle , ' rad = ', angle*180/np.pi, ' degrees')
+        print('Calc Deflector Init Pos : ',initPosition, ' , Ang: ',angle , ' rad = ', angle*180/np.pi, ' degrees')
         return initPosition, angle
 
 def euler_to_quaternion(roll, pitch, yaw):
@@ -550,14 +651,14 @@ def gripperOrientaionTest():
     M.createTarget('testball',ballPosition, [0,0,0,1],[0,1,1,0.7])
     targetOffset = [0,0,0.62]
     degrees = 150 #-58.59447385472987
-    targetOrientation = euler_to_quaternion(degrees*np.pi/180,0,0)
-    M.moveGripper('B', 'testball', targetOffset, targetOrientation)
+    targetOrientation = euler_to_quaternion(degrees*np.pi/180,0,-45*np.pi/180)
+    M.moveGripperIK('B', 'testball', targetOffset, targetOrientation)
     input('Done...')
     M.destroy()
 
 def main():
-    # hitBallTest()
-    hitBallTestDebug()
+    hitBallTest()
+    # hitBallTestDebug()
     # gripperOrientaionTest()
 
 if __name__ == "__main__":
