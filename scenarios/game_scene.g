@@ -53,11 +53,11 @@ camera(world){
 }
 
 
-ball1 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, -.5, 1, 1, 0, 0, 0]> , color:[1 1 .5], contact}
+ball1 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, -.5, 1, 1, 0, 0, 0]> , color:[1 0 0], contact}
 
-ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .5, 1,  1, 0, 0, 0]> , color:[1 .5 .5], contact}
+ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .5, 1,  1, 0, 0, 0]> , color:[1 0 0], contact}
 
-ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-0.75, 0, 1,  1, 0, 0, 0]> , color:[0.5 .5 1], contact}
+ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-0.75, 0, 1,  1, 0, 0, 0]> , color:[1 0 0], contact}
 
 
 
@@ -66,7 +66,7 @@ ramp_1 (table) {
     shape:ssCvx, # this states "sphere-swept convex"
     mesh:'ramp1.arr', # this specifies the core of the object
     size:[.03] # the sphere-sweeping radius
-    color:[.8, 0, 1], # the color
+    color:[0, 0.6, 1], # the color
     Q:<t(-1.2 0 0) d(-90 0 0 1)> # relative pose: translated by (-0.75, 0, .15)
 }
 
@@ -74,7 +74,7 @@ ramp_1 (table) {
 
 #shape deflector(table) { type=mesh rel=<T 1.2 0 .3 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
 
-shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
+shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 1 0] }
 #1/sqrt2
 #deflector_side (deflector) {shape:ssBox, Q:<t(-2 0 .1)>, size:[.1 0.1 .01 .01], color:[.7 .5 .5]}
 
