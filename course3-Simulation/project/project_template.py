@@ -15,7 +15,6 @@ def _segment_redpixels(rgb):
     return mask1 + mask2
 
 
-## execise 1-2
 def _image_pointcloud(depth, rgb, mask):
     mask_pixels = np.where(mask>0)
     pointcloud = np.empty((mask_pixels[0].shape[0], 3))
@@ -65,8 +64,11 @@ class BallDeflector:
         print('===== Running Sim for ',time_interval ,' units =====')
         for i in range(time_interval):
             if i % 50 == 0 :
-                position = self.RealWorld.getFrame('ball3').getPosition()
-                self.createTarget('real_ball',position,[0,0,0,1],[0,0,1,0.8])
+                if(self.perceptionMode == 'cheat'):
+                    position = self.RealWorld.getFrame(self.targetFrame).getPosition()
+                elif(self.perceptionMode == 'komo'):
+                    position = self.perceptionGetPosition(self.targetFrame)
+                self.createTarget('real_ball',position,[0,0,0,1],[0,0,1,0])
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
@@ -102,7 +104,12 @@ class BallDeflector:
 
         testBall = self.RealWorld.getFrame('ball3')
         # objectPosition = self.testBall.getPosition()
-        # testBall.setPosition([1, 0, .5])
+        testBall.setColor([0, 0, 1, 0.5 ])
+
+        targetFrame = 'ball1'
+        targetObj = self.RealWorld.getFrame(targetFrame)
+        targetObj.setContact(1)
+        targetObj.setColor([1,0,0,1])
 
         # Configure Physics Engine
         self.S = self.RealWorld.simulation(ry.SimulatorEngine.physx, True)
@@ -180,6 +187,40 @@ class BallDeflector:
 
         return p_obj, q_obj
 
+    def komoBallPose(self,obj_points, num_batch = 5):
+        num_obj = int(obj_points.shape[0]/num_batch)
+#         permutation = np.random.permutation(obj_points.shape[0])
+        permutation = np.arange(obj_points.shape[0])
+        for b in range(num_batch):
+            for o in range(num_obj):
+                name = "pointCloud%i" % o
+                obj = self.perceptionC.addFrame(name)
+                obj.setShape(ry.ST.sphere, [.001])
+                indices = permutation[o+num_obj*b]
+                obj.setPosition(obj_points[indices])
+
+            komo = self.perceptionC.komo_path(1.,1,self.tau,True)
+            komo.clearObjectives()
+            komo.add_qControlObjective(order=1, scale=1e3) # Prior
+            komo.addSquaredQuaternionNorms(0., 1., 1e2)
+            if not self.S.getGripperIsGrasping("A_gripper"):
+                komo.addObjective([1.], ry.FS.distance, ["ball", "table"], ry.OT.eq, [1e2])
+                komo.addObjective([], ry.FS.vectorY, ["ball"], ry.OT.eq, [1e2], order=1)
+            for o in range(num_obj):
+                name = "pointCloud%i" % o
+                komo.addObjective([1.], ry.FS.distance, ["ball", name], ry.OT.sos, [1e0], target = [.001]) # Likelihood
+            komo.optimize()
+            # input('KomoBallPose')
+
+            self.perceptionC.setFrameState(komo.getConfiguration(0))
+            p_obj = self.percepObj.getPosition()
+            q_obj = self.percepObj.getQuaternion()
+            for o in range(num_obj):
+                name = "pointCloud%i" % o
+                self.perceptionC.delFrame(name)
+
+        return p_obj, q_obj
+
 
     def perception(self):
         # grab sensor readings from the simulation & set the model object to percept
@@ -197,7 +238,7 @@ class BallDeflector:
             self.V.recopyMeshes(self.C)
             errPer = np.inf
             if len(obj_points)>0:
-                p_obj, q_obj = self.komoBoxPose(obj_points)
+                p_obj, q_obj = self.komoBallPose(obj_points)
                 errPer = np.abs(self.obj.getPosition()-self.targetObj.getPosition()).max() # only for print
                 self.obj.setPosition(p_obj)
                 self.obj.setQuaternion(q_obj)
@@ -205,6 +246,35 @@ class BallDeflector:
         else:
             print('perceptionMode was not defined well!!')
         return errPer
+
+    def perceptionGetPosition(self, ballFrame):
+        position = [0,0,0]
+        # grab sensor readings from the simulation & set the model object to percept
+        [rgb, depth] = self.S.getImageAndDepth()
+        if self.perceptionMode == 'cheat': #TOTAL CHEAT: grab the true position from the RealWorld
+            objectPosition = self.targetObj.getPosition()
+            objectQuaternion = self.targetObj.getQuaternion()
+            self.obj.setPosition(objectPosition)
+            self.obj.setQuaternion(objectQuaternion)
+            self.V.setConfiguration(self.C)
+            errPer = 0.
+        elif self.perceptionMode == 'komo':
+            obj_points, rel_points, masked_rgb = find_redpixels(rgb, depth, self.cameraFrame, self.fxfypxpy)
+            self.cameraFrame.setPointCloud(rel_points, masked_rgb)
+            self.V.recopyMeshes(self.C)
+            errPer = np.inf
+            if len(obj_points)>0:
+                p_obj, q_obj = self.komoBallPose(obj_points)
+                errPer = np.abs(self.obj.getPosition()-self.targetObj.getPosition()).max() # only for print
+                self.obj.setPosition(p_obj)
+                self.obj.setQuaternion(q_obj)
+                self.V.setConfiguration(self.C)
+            position = self.obj.getPosition()
+        else:
+            print('perceptionMode was not defined well!!')
+        print('obj position', position)
+        return position
+
 
     def testPerception(self):
         for i in range(1000):
@@ -409,11 +479,15 @@ class BallDeflector:
 
         self.moveToDest(robotName,targetPose)
 
-    def movingBallPerception(self, ballFrame, observeTime, type='cheat'):
-        if(type == 'cheat'):
+    def movingBallPerception(self, ballFrame, observeTime):
+        if(self.perceptionMode == 'cheat'):
             p1 = self.RealWorld.getFrame(ballFrame).getPosition()
             self.runSim(observeTime)
             p2 = self.RealWorld.getFrame(ballFrame).getPosition()
+        elif(self.perceptionMode == 'komo'):
+            p1 = self.perceptionGetPosition(ballFrame)
+            self.runSim(observeTime)
+            p2 = self.perceptionGetPosition(ballFrame)
         else:
             # TODO: Add OpenCV Ball Position Perception
             p1 = [0,0,0]
@@ -425,21 +499,21 @@ class BallDeflector:
         print('===== Hitting ',ballFrame,' =====')
         dt = 20
         steps = 12
-        total_time = dt*steps - 30
-        observeTime = 1
-        for i in range(1,steps+1):
-            p1,p2 = self.movingBallPerception(ballFrame,observeTime)
-            position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
-            self.createTarget('ball_'+str(i),position,[0,0,0,1])
+        total_time = dt*steps
+        observeTime = 4
+        # for i in range(1,steps+1):
+        #     p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+        #     position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
+        #     self.createTarget('ball_'+str(i),position,[0,0,0,1])
 
         p1,p2 = self.movingBallPerception(ballFrame,observeTime)
-        position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
+        position = self.calculateFuturePosition(p1,p2, total_time,observeTime)
         self.createTarget('future_ball',position,color = [0,1,0,0.9])
         # self.createTarget('future_ball',[1, 0, .3],[0,0,0,1])
         # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
         goalPos = self.RealWorld.getFrame(goalFrame).getPosition()
         goalPos[2] = 0.3
-        self.createTarget('goal',goalPos,[0,0,0,1])
+        self.createTarget('goal',goalPos,[0,0,0,1],color = [1,0,0,0])
         startPosition = self.C.getFrame('future_ball').getPosition()
         goalPosition = self.C.getFrame('goal').getPosition()
         offset = 0.5
@@ -447,20 +521,20 @@ class BallDeflector:
 
         steps = 12
         dstep = 0.1
-        for i in range(1,steps+1):
-            position = [0,0,0]
-            position[0] = startPosition[0] - i*dstep*np.cos(angle)
-            position[1] = startPosition[1] - i*dstep*np.sin(angle)
-            position[2] = 0.3
-            self.createTarget('fball_'+str(i),position,[0,0,0,1])
+        # for i in range(1,steps+1):
+        #     position = [0,0,0]
+        #     position[0] = startPosition[0] - i*dstep*np.cos(angle)
+        #     position[1] = startPosition[1] - i*dstep*np.sin(angle)
+        #     position[2] = 0.3
+        #     self.createTarget('fball_'+str(i),position,[0,0,0,1])
 
         # angle = angle - np.pi/2
         # angle= angle/2
         q = euler_to_quaternion(angle,0,0)
         print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
-        self.createTarget('init',initPosition,[0,0,0,1],[1,1,0,0.9])
+        self.createTarget('init',initPosition,[0,0,0,1],[1,0,1,0.9])
         self.moveGripper('B','init',[0,0,0.62],q)
-        self.runSim(total_time)
+        self.runSim(total_time - 30)
         self.moveGripper('B','future_ball',[0,0,0.62],q)
         # targetPose = self.C.getFrame(targetFrame).getPosition()
         # targetPose[-1] += -0.55
@@ -656,10 +730,36 @@ def gripperOrientaionTest():
     input('Done...')
     M.destroy()
 
+def hitBallTestPerception():
+    M = BallDeflector(perceptionMode='komo')
+    M.setTarget('ball3')
+    # M.perceptionGetPosition('ball3')
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', 'ball3', 'A_bin_base')
+    M.runSim(700)
+    input('Done...')
+    M.destroy()
+
+def pickAndPlaceTest():
+    M = BallDeflector(perceptionMode='komo')
+    # M.RealWorld.delFrame("ball3")
+    targetFrame = 'ball1'
+    targetObj = M.RealWorld.getFrame(targetFrame)
+    targetObj.setContact(1)
+    targetObj.setColor([1,0,0,1])
+    M.setTarget('ball1')
+    M.runSim(100)
+    M.pickAndPlace('A', 'ball1')
+    M.runSim(700)
+    input('Done...')
+    M.destroy()
 def main():
-    hitBallTest()
+    # hitBallTest()
     # hitBallTestDebug()
     # gripperOrientaionTest()
+    # hitBallTestPerception()
+    pickAndPlaceTest()
 
 if __name__ == "__main__":
     main()
