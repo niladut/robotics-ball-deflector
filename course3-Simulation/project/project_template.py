@@ -656,10 +656,17 @@ def gripperOrientaionTest():
     input('Done...')
     M.destroy()
 
+def pickAndPlaceTest():
+    M = BallDeflector()
+    M.pickAndPlace('A', 'ball2')
+    input('Done...')
+    M.destroy()
+
 def main():
-    hitBallTest()
+    # hitBallTest()
     # hitBallTestDebug()
     # gripperOrientaionTest()
+    pickAndPlaceTest()
 
 if __name__ == "__main__":
     main()
