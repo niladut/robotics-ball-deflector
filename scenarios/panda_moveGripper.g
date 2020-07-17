@@ -10,7 +10,7 @@ Delete panda_link4_0
 Delete panda_link5_0
 Delete panda_link6_0
 Delete panda_link7_0
-       
+
 frame (panda_link0)	{ shape:capsule color:[.9 .9 .9 .1] size:[.1 .1] Q:<t(-.04 .0 .03) d(90 0 1 0)>, noVisual, contact:-2  }
 
 frame (panda_joint1)	{ shape:capsule color:[.9 .9 .9 .1] size:[.2 .08] Q:<d(90 0 1 0) t(0 0 -.15)>, noVisual, contact:-2  }
@@ -50,7 +50,6 @@ Delete panda_rightfinger_0
 Include: 'gripper.g'
 
 Edit gripper (panda_joint7){ Q:<d(-90 0 1 0) d(135 0 0 1) t(0 0 -.155)> }
-       
+
 Edit finger1{ joint:transX Q:<> A:<t(+.07 0 -.05)> limits: [-.04 0.02], contact: -2, shape:capsule, size:[.02, .02] }
 Edit finger2{ joint:transX mimic:(finger1) Q:<> A:<d(180 0 0 1) t(+.07 0 -.05)>, contact: -2, shape:capsule, size:[.02, .02]}
-        
