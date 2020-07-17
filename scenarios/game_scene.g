@@ -46,16 +46,21 @@ Edit A_gripper { contact:1 }
 Edit B_panda_link0 (table)  { Q:<t( 1.5 0 .1) d(180 0 0 1)> }
 Edit R_gripper { contact:1 }
 
+# camera(world){
+#     Q:<t(1 0 2) d(30 1 90 0)>,
+#     shape:marker, size:[.1],
+#     focalLength:0.895, width:640, height:360, zRange:[.5 100]
+# }
+
 camera(world){
-    Q:<t(1 0 2) d(30 1 90 0)>,
+    Q:<t(0 0 2) d(0 1 90 0)>,
     shape:marker, size:[.1],
     focalLength:0.895, width:640, height:360, zRange:[.5 100]
 }
 
-
 ball1 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, -.5, 1, 1, 0, 0, 0]> , color:[1 1 .5], contact}
 
-ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .5, 1,  1, 0, 0, 0]> , color:[1 .5 .5], contact}
+ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .5, 1,  1, 0, 0, 0]> , color:[1 0 0], contact}
 
 ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-0.75, 0, 1,  1, 0, 0, 0]> , color:[0.5 .5 1], contact}
 
@@ -74,7 +79,7 @@ ramp_1 (table) {
 
 #shape deflector(table) { type=mesh rel=<T 1.2 0 .3 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
 
-shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
+shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[0.3 0.6 1] }
 #1/sqrt2
 #deflector_side (deflector) {shape:ssBox, Q:<t(-2 0 .1)>, size:[.1 0.1 .01 .01], color:[.7 .5 .5]}
 
