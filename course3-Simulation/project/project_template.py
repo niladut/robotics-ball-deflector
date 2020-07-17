@@ -423,8 +423,8 @@ class BallDeflector:
 
     def hitBall(self, robotName, ballFrame, goalFrame):
         print('===== Hitting ',ballFrame,' =====')
-        dt = 20
-        steps = 12
+        dt = 50
+        steps = 5
         total_time = dt*steps - 30
         observeTime = 1
         for i in range(1,steps+1):
@@ -445,8 +445,8 @@ class BallDeflector:
         offset = 0.5
         initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
 
-        steps = 12
-        dstep = 0.1
+        steps = 9
+        dstep = 0.2
         for i in range(1,steps+1):
             position = [0,0,0]
             position[0] = startPosition[0] - i*dstep*np.cos(angle)
