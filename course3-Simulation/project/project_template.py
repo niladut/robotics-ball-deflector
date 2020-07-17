@@ -376,8 +376,7 @@ class BallDeflector:
             print('====== Done ======')
 #         input()
 
-    def pickAndPlace(self, robotName, targetFrame):
-        self.setTarget(targetFrame)
+    def pickAndPlace(self, robotName, ballFrame, destFrame):
         self.openGripper(robotName)
         self.moveToInit()
         self.perception()
@@ -385,7 +384,7 @@ class BallDeflector:
     #         input()
         success = self.pick(robotName)
         if success:
-            targetPose = self.C.getFrame("ramp_1").getPosition()
+            targetPose = self.C.getFrame(destFrame).getPosition()
             targetPose[-1] += 1
             targetPose[0] -= 0
             self.moveToDest(robotName,targetPose)
@@ -658,7 +657,14 @@ def gripperOrientaionTest():
 
 def pickAndPlaceTest():
     M = BallDeflector()
-    M.pickAndPlace('A', 'ball2')
+    M.setTarget('ball2')
+    M.pickAndPlace('A', 'ball2', "ramp_1")
+    input('Done...')
+    M.destroy()
+
+def pickAndPlacePerceptionTest():
+    M = BallDeflector(perceptionMode='komo')
+    M.pickAndPlace('A', 'ball2', "ramp_1")
     input('Done...')
     M.destroy()
 
@@ -667,6 +673,7 @@ def main():
     # hitBallTestDebug()
     # gripperOrientaionTest()
     pickAndPlaceTest()
+    # pickAndPlacePerceptionTest()
 
 if __name__ == "__main__":
     main()
