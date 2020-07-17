@@ -84,6 +84,16 @@ class BallDeflector:
         self.obj.setColor([1,1,0,0.9])
         self.obj.setContact(1)
 
+    def setTargetObject(self, targetFrame):
+        #you can also change the shape & size
+        self.targetObj = self.RealWorld.getFrame(targetFrame)
+        self.targetObj.setContact(1)
+
+        self.obj = self.C.addFrame(targetFrame)
+        self.obj.setShape(ry.ST.sphere, [.05])
+        self.obj.setColor([1,1,0,0.9])
+        self.obj.setContact(1)
+
     def createTarget(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [1,0,0,0.9]):
         self.targetFrame = targetFrame
 
@@ -135,15 +145,16 @@ class BallDeflector:
 
     def setupKomoPerception(self):
         self.perceptionC = ry.Config()
+        self.komoBallFrame = "ball"
 
         table = self.perceptionC.addFrame("table")
         table.setPosition(self.C.frame("table").getPosition())
         table.setShape(ry.ST.ssBox, self.S.getGroundTruthSize("table"))
 
-        self.percepObj = self.perceptionC.addFrame("ball")
+        self.percepObj = self.perceptionC.addFrame(self.komoBallFrame)
         self.percepObj.setShape(ry.ST.sphere, [.05])
         self.percepObj.setContact(1)
-        self.perceptionC.makeObjectsFree(["ball"])
+        self.perceptionC.makeObjectsFree([self.komoBallFrame])
         self.percepObj.setQuaternion([1,1,0,0])
 
 
@@ -180,6 +191,39 @@ class BallDeflector:
 
         return p_obj, q_obj
 
+    def komoBallPose(self,obj_points, num_batch = 5):
+        num_obj = int(obj_points.shape[0]/num_batch)
+#         permutation = np.random.permutation(obj_points.shape[0])
+        permutation = np.arange(obj_points.shape[0])
+        for b in range(num_batch):
+            for o in range(num_obj):
+                name = "pointCloud%i" % o
+                obj = self.perceptionC.addFrame(name)
+                obj.setShape(ry.ST.sphere, [.001])
+                indices = permutation[o+num_obj*b]
+                obj.setPosition(obj_points[indices])
+
+            komo = self.perceptionC.komo_path(1.,1,self.tau,True)
+            komo.clearObjectives()
+            komo.add_qControlObjective(order=1, scale=1e3) # Prior
+            komo.addSquaredQuaternionNorms(0., 1., 1e2)
+            if not self.S.getGripperIsGrasping("A_gripper"):
+                komo.addObjective([1.], ry.FS.distance, [self.komoBallFrame, "table"], ry.OT.eq, [1e2])
+                komo.addObjective([], ry.FS.vectorY, [self.komoBallFrame], ry.OT.eq, [1e2], order=1)
+            for o in range(num_obj):
+                name = "pointCloud%i" % o
+                komo.addObjective([1.], ry.FS.distance, [self.komoBallFrame, name], ry.OT.sos, [1e0], target = [.001]) # Likelihood
+            komo.optimize()
+
+            self.perceptionC.setFrameState(komo.getConfiguration(0))
+            p_obj = self.percepObj.getPosition()
+            q_obj = self.percepObj.getQuaternion()
+            for o in range(num_obj):
+                name = "pointCloud%i" % o
+                self.perceptionC.delFrame(name)
+
+        return p_obj, q_obj
+
 
     def perception(self):
         # grab sensor readings from the simulation & set the model object to percept
@@ -197,7 +241,7 @@ class BallDeflector:
             self.V.recopyMeshes(self.C)
             errPer = np.inf
             if len(obj_points)>0:
-                p_obj, q_obj = self.komoBoxPose(obj_points)
+                p_obj, q_obj = self.komoBallPose(obj_points)
                 errPer = np.abs(self.obj.getPosition()-self.targetObj.getPosition()).max() # only for print
                 self.obj.setPosition(p_obj)
                 self.obj.setQuaternion(q_obj)
@@ -664,6 +708,7 @@ def pickAndPlaceTest():
 
 def pickAndPlacePerceptionTest():
     M = BallDeflector(perceptionMode='komo')
+    M.setTarget('ball2')
     M.pickAndPlace('A', 'ball2', "ramp_1")
     input('Done...')
     M.destroy()
@@ -672,8 +717,8 @@ def main():
     # hitBallTest()
     # hitBallTestDebug()
     # gripperOrientaionTest()
-    pickAndPlaceTest()
-    # pickAndPlacePerceptionTest()
+    # pickAndPlaceTest()
+    pickAndPlacePerceptionTest()
 
 if __name__ == "__main__":
     main()
