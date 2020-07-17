@@ -84,15 +84,6 @@ class BallDeflector:
         self.obj.setColor([1,1,0,0.9])
         self.obj.setContact(1)
 
-    def setTargetObject(self, targetFrame):
-        #you can also change the shape & size
-        self.targetObj = self.RealWorld.getFrame(targetFrame)
-        self.targetObj.setContact(1)
-
-        self.obj = self.C.addFrame(targetFrame)
-        self.obj.setShape(ry.ST.sphere, [.05])
-        self.obj.setColor([1,1,0,0.9])
-        self.obj.setContact(1)
 
     def createTarget(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [1,0,0,0.9]):
         self.targetFrame = targetFrame
@@ -250,8 +241,8 @@ class BallDeflector:
             print('perceptionMode was not defined well!!')
         return errPer
 
-    def testPerception(self):
-        for i in range(1000):
+    def testPerception(self, simTime):
+        for i in range(simTime):
             errPer=self.perception()
             self.S.step([], self.tau, ry.ControlMode.none)
             print('t: {:.1f}, Perception Error: {:.3f}'.format(self.t*self.tau, errPer))
@@ -421,11 +412,12 @@ class BallDeflector:
 #         input()
 
     def pickAndPlace(self, robotName, ballFrame, destFrame):
+        self.setTarget(ballFrame)
         self.openGripper(robotName)
         self.moveToInit()
         self.perception()
         self.align(robotName)
-    #         input()
+        input()
         success = self.pick(robotName)
         if success:
             targetPose = self.C.getFrame(destFrame).getPosition()
@@ -701,24 +693,31 @@ def gripperOrientaionTest():
 
 def pickAndPlaceTest():
     M = BallDeflector()
-    M.setTarget('ball2')
     M.pickAndPlace('A', 'ball2', "ramp_1")
     input('Done...')
     M.destroy()
 
 def pickAndPlacePerceptionTest():
     M = BallDeflector(perceptionMode='komo')
-    M.setTarget('ball2')
     M.pickAndPlace('A', 'ball2', "ramp_1")
     input('Done...')
     M.destroy()
+
+def perceptionTest():
+    M = BallDeflector(perceptionMode='komo')
+    M.setTarget('ball2')
+    M.testPerception(50)
+    input('Done...')
+    M.destroy()
+
 
 def main():
     # hitBallTest()
     # hitBallTestDebug()
     # gripperOrientaionTest()
     # pickAndPlaceTest()
-    pickAndPlacePerceptionTest()
+    # pickAndPlacePerceptionTest()
+    perceptionTest()
 
 if __name__ == "__main__":
     main()
