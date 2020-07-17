@@ -741,7 +741,7 @@ def hitBallTestPerception():
     input('Done...')
     M.destroy()
 
-def pickAndPlaceTest():
+def pickAndPlaceKomoTest():
     M = BallDeflector(perceptionMode='komo')
     # M.RealWorld.delFrame("ball3")
     targetFrame = 'ball1'
@@ -754,12 +754,38 @@ def pickAndPlaceTest():
     M.runSim(700)
     input('Done...')
     M.destroy()
+
+def pickAndPlaceCheatTest():
+    M = BallDeflector(perceptionMode='cheat')
+
+    # M.runSim(500)
+    # Robot B: Pick Deflector Tool
+    # M.pickDeflectorTool("B", "deflector")
+    # M.pickAndPlace("B", "deflector")
+
+    # Robot A: Pick and Place Ball 1 on Ramp
+    M.pickAndPlace("A","ball1")
+
+    # Robot B: Localize and deflect moving Ball to Target P
+    M.deflectBall('ball1','A_bin_base')
+
+    # Robot A: Pick and Place Ball 2 on Ramp
+    M.pickAndPlace("A","ball2")
+
+    # Robot B: Localize and deflect moving Ball to Target Q
+    M.deflectBall('ball2','B_bin_base')
+
+    M.runSim(500)
+    input('Done...')
+    M.destroy()
+
 def main():
     # hitBallTest()
-    # hitBallTestDebug()
+    hitBallTestDebug()
     # gripperOrientaionTest()
     # hitBallTestPerception()
-    pickAndPlaceTest()
+    # pickAndPlaceKomoTest()
+    # pickAndPlaceCheatTest()
 
 if __name__ == "__main__":
     main()
