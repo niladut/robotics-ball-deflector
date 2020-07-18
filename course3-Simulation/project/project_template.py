@@ -146,40 +146,6 @@ class BallDeflector:
         self.perceptionC.makeObjectsFree([self.komoBallFrame])
         # self.percepObj.setQuaternion([1,1,0,0])
 
-
-    def komoBoxPose(self,obj_points, num_batch = 1):
-        num_obj = int(obj_points.shape[0]/num_batch)
-#         permutation = np.random.permutation(obj_points.shape[0])
-        permutation = np.arange(obj_points.shape[0])
-        for b in range(num_batch):
-            for o in range(num_obj):
-                name = "pointCloud%i" % o
-                obj = self.perceptionC.addFrame(name)
-                obj.setShape(ry.ST.sphere, [.001])
-                indices = permutation[o+num_obj*b]
-                obj.setPosition(obj_points[indices])
-
-            komo = self.perceptionC.komo_path(1.,1,self.tau,True)
-            komo.clearObjectives()
-            komo.add_qControlObjective(order=1, scale=1e3) # Prior
-            komo.addSquaredQuaternionNorms(0., 1., 1e2)
-            if not self.S.getGripperIsGrasping("A_gripper"):
-                komo.addObjective([1.], ry.FS.distance, [self.targetFrame, "table"], ry.OT.eq, [1e2])
-                komo.addObjective([], ry.FS.vectorY, [self.targetFrame], ry.OT.eq, [1e2], order=1)
-            for o in range(num_obj):
-                name = "pointCloud%i" % o
-                komo.addObjective([1.], ry.FS.distance, [self.targetFrame, name], ry.OT.sos, [1e0], target = [.001]) # Likelihood
-            komo.optimize()
-
-            self.perceptionC.setFrameState(komo.getConfiguration(0))
-            p_obj = self.percepObj.getPosition()
-            q_obj = self.percepObj.getQuaternion()
-            for o in range(num_obj):
-                name = "pointCloud%i" % o
-                self.perceptionC.delFrame(name)
-
-        return p_obj, q_obj
-
     def komoBallPose(self,obj_points, num_batch = 1):
         num_obj = int(obj_points.shape[0]/num_batch)
 #         permutation = np.random.permutation(obj_points.shape[0])
@@ -239,6 +205,35 @@ class BallDeflector:
         else:
             print('perceptionMode was not defined well!!')
         return errPer
+
+    def perceptionGetPosition(self, ballFrame):
+        position = [0,0,0]
+        # grab sensor readings from the simulation & set the model object to percept
+        [rgb, depth] = self.S.getImageAndDepth()
+        if self.perceptionMode == 'cheat': #TOTAL CHEAT: grab the true position from the RealWorld
+            objectPosition = self.targetObj.getPosition()
+            objectQuaternion = self.targetObj.getQuaternion()
+            self.obj.setPosition(objectPosition)
+            self.obj.setQuaternion(objectQuaternion)
+            self.V.setConfiguration(self.C)
+            errPer = 0.
+        elif self.perceptionMode == 'komo':
+            obj_points, rel_points, masked_rgb = find_redpixels(rgb, depth, self.cameraFrame, self.fxfypxpy)
+            self.cameraFrame.setPointCloud(rel_points, masked_rgb)
+            self.V.recopyMeshes(self.C)
+            errPer = np.inf
+            if len(obj_points)>0:
+                p_obj, q_obj = self.komoBallPose(obj_points)
+                errPer = np.abs(self.obj.getPosition()-self.targetObj.getPosition()).max() # only for print
+                self.obj.setPosition(p_obj)
+                self.obj.setQuaternion(q_obj)
+                self.V.setConfiguration(self.C)
+            position = self.obj.getPosition()
+        else:
+            print('perceptionMode was not defined well!!')
+        print('obj position', position)
+        return position
+
 
     def testPerception(self, simTime):
         for i in range(simTime):
