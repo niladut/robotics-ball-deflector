@@ -69,7 +69,7 @@ class BallDeflector:
                     position = self.RealWorld.getFrame(self.targetFrame).getPosition()
                 elif(self.perceptionMode == 'komo'):
                     position = self.perceptionGetPosition(self.targetFrame)
-                self.createBallFrame('real_ball',position,[0,0,0,1],color = [0,0,1,0.9])
+                self.createBallFrame('real_ball'+str(i),position,[0,0,0,1],color = [0,0,1,0.5])
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
