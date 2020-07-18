@@ -4,6 +4,8 @@
 #include <Kin/simulation.h>
 #include <Kin/viewer.h>
 
+#include <iomanip>
+
 //===========================================================================
 
 void testPushes(){
@@ -21,7 +23,7 @@ void testPushes(){
 
   arr Xstart = C.getFrameState();
 
-  for(uint k=0;k<100;k++){
+  for(uint k=0;k<5;k++){
 
     //restart from the same state multiple times
     S.setState(Xstart);
@@ -70,6 +72,7 @@ void testGrasp(){
 
   for(uint t=0;;t++){
     tic.waitForTic();
+//    rai::wait(.05);
 
     C.stepSwift();
 //    C.reportProxies();
@@ -121,7 +124,6 @@ void testOpenClose(){
   double tau = .01;
 
   S.closeGripper("R_gripper");
-
   for(uint t=0;;t++){
     rai::wait(tau);
 
@@ -130,6 +132,19 @@ void testOpenClose(){
     V.setConfiguration(C);
 
     S.step({}, tau, S._none);
+    if(S.getGripperIsClose("R_gripper")) break;
+  }
+
+  S.openGripper("R_gripper");
+  for(uint t=0;;t++){
+    rai::wait(tau);
+
+    arr q = S.get_q();
+    C.setJointState(q);
+    V.setConfiguration(C);
+
+    S.step({}, tau, S._none);
+    if(S.getGripperIsOpen("R_gripper")) break;
   }
 }
 
@@ -181,13 +196,52 @@ void makeRndScene(){
 
 //===========================================================================
 
+void testFriction(){
+  rai::Configuration C;
+
+  for(int i=0;i<10;i++){
+    rai::Frame *obj = C.addFrame(STRING("obj" <<i));
+    arr size = {.1,.1,.1, .01};
+    obj->setShape(rai::ST_ssBox, size);
+    obj->setPosition({(i-5)*.2,0.,1.});
+    obj->setMass(.2);
+    obj->addAttribute("friction", .02*i);
+  }
+
+  C.addFile("../../scenarios/pandasTable.g");
+
+  C["table"]->setQuaternion({1.,-.1,0.,0.}); //tilt the table!!
+
+  //  rai::Simulation S(C, S._bullet, true);
+  rai::Simulation S(C, S._physx, true);
+  S.cameraview().addSensor("camera");
+
+  double tau=.01;
+  Metronome tic(tau);
+
+  int ppmCount=0;
+  rai::system("mkdir -p z.vid/; rm -f z.vid/*.ppm");
+
+  for(uint t=0;t<300;t++){
+    tic.waitForTic();
+
+    S.step({}, tau, S._none);
+    write_ppm(S.getScreenshot(), STRING("z.vid/"<<std::setw(4)<<std::setfill('0')<<(ppmCount++)<<".ppm"));
+  }
+
+  rai::wait();
+}
+
+//===========================================================================
+
 int main(int argc,char **argv){
   rai::initCmdLine(argc, argv);
 
 //  testPushes();
 //  testGrasp();
-  testOpenClose();
+//  testOpenClose();
 //  makeRndScene();
+  testFriction();
 
   return 0;
 }
