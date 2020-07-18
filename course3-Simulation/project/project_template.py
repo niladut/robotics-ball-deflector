@@ -65,8 +65,11 @@ class BallDeflector:
         print('===== Running Sim for ',time_interval ,' units =====')
         for i in range(time_interval):
             if i % 50 == 0 :
-                position = self.RealWorld.getFrame('ball3').getPosition()
-                self.createBallFrame('real_ball'+str(i),position,[0,0,0,1],[0,0,1,0.8])
+                if(self.perceptionMode == 'cheat'):
+                    position = self.RealWorld.getFrame(self.targetFrame).getPosition()
+                elif(self.perceptionMode == 'komo'):
+                    position = self.perceptionGetPosition(self.targetFrame)
+                self.createBallFrame('real_ball',position,[0,0,0,1],[0,0,1,0.5])
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
@@ -93,6 +96,7 @@ class BallDeflector:
         obj.setPosition(targetPosition)
         obj.setQuaternion(targetQuaternion)
         self.V.setConfiguration(self.C)
+        return obj
 
     def setupSim(self):
         #-- REAL WORLD configuration, which is attached to the physics engine
@@ -681,6 +685,7 @@ def hitBallTestDebug():
 
 def hitBallPerceptionTest():
     M = BallDeflector(perceptionMode='komo')
+    M.setTarget('ball3')
     M.runSim(200)
     # Test Arm Movement
     M.hitBall('B', 'ball3', 'B_bin_base')
