@@ -15,7 +15,6 @@ def _segment_redpixels(rgb):
     return mask1 + mask2
 
 
-## execise 1-2
 def _image_pointcloud(depth, rgb, mask):
     mask_pixels = np.where(mask>0)
     pointcloud = np.empty((mask_pixels[0].shape[0], 3))
@@ -52,9 +51,10 @@ def find_redpixels(rgb, depth, cameraFrame, fxfypxpy):
 
 
 class BallDeflector:
-    def __init__(self, perceptionMode='cheat'):
+    def __init__(self, perceptionMode='cheat', debug = False):
         self.tau = 0.01
         self.t = 0
+        self.debug = debug
 
         self.setupSim()
         self.setupC()
@@ -64,7 +64,7 @@ class BallDeflector:
     def runSim(self, time_interval):
         print('===== Running Sim for ',time_interval ,' units =====')
         for i in range(time_interval):
-            if i % 50 == 0 :
+            if i % 50 == 0 and self.debug:
                 if(self.perceptionMode == 'cheat'):
                     position = self.RealWorld.getFrame(self.targetFrame).getPosition()
                 elif(self.perceptionMode == 'komo'):
@@ -150,7 +150,7 @@ class BallDeflector:
         self.perceptionC.makeObjectsFree([self.komoBallFrame])
         # self.percepObj.setQuaternion([1,1,0,0])
 
-    def komoBallPose(self,obj_points, num_batch = 1):
+    def komoBallPose(self,obj_points, num_batch = 5):
         num_obj = int(obj_points.shape[0]/num_batch)
 #         permutation = np.random.permutation(obj_points.shape[0])
         permutation = np.arange(obj_points.shape[0])
@@ -171,8 +171,7 @@ class BallDeflector:
                 komo.addObjective([], ry.FS.vectorY, [self.komoBallFrame], ry.OT.eq, [1e2], order=1)
             for o in range(num_obj):
                 name = "pointCloud%i" % o
-                # komo.addObjective([1.], ry.FS.distance, [self.komoBallFrame, name], ry.OT.sos, [1e0], target = [.001]) # Likelihood
-                komo.addObjective([1.], ry.FS.distance, [self.komoBallFrame, name], ry.OT.sos, [0.05], target = [.001]) # Likelihood
+                komo.addObjective([1.], ry.FS.distance, [self.komoBallFrame, name], ry.OT.sos, [1e0], target = [.001]) # Likelihood
             komo.optimize()
 
             self.perceptionC.setFrameState(komo.getConfiguration(0))
@@ -461,17 +460,18 @@ class BallDeflector:
     def hitBall(self, robotName, ballFrame, goalFrame):
         print('===== Hitting ',ballFrame,' =====')
         dt = 50
-        steps = 5
+        steps = 6
         total_time = dt*steps - 30
         observeTime = 1
         self.setTarget(ballFrame)
-        for i in range(1,steps+1):
-            p1,p2 = self.movingBallPerception(ballFrame,observeTime)
-            position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
-            self.createBallFrame('ball_'+str(i),position,[0,0,0,1])
+        if self.debug:
+            for i in range(1,steps+1):
+                p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+                position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
+                self.createBallFrame('ball_'+str(i),position,color = [0,0,0,0.5])
 
         p1,p2 = self.movingBallPerception(ballFrame,observeTime)
-        position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
+        position = self.calculateFuturePosition(p1,p2, dt*steps,observeTime)
         self.createBallFrame('future_ball',position,color = [0,1,0,0.9])
         # self.createBallFrame('future_ball',[1, 0, .3],[0,0,0,1])
         # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
@@ -483,14 +483,16 @@ class BallDeflector:
         offset = 0.5
         initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
 
-        steps = 9
-        dstep = 0.2
-        for i in range(1,steps+1):
-            position = [0,0,0]
-            position[0] = startPosition[0] - i*dstep*np.cos(angle)
-            position[1] = startPosition[1] - i*dstep*np.sin(angle)
-            position[2] = 0.3
-            self.createBallFrame('fball_'+str(i),position,[0,0,0,1])
+        # Predict Future Trajectory
+        if self.debug:
+            steps = 9
+            dt = 0.2
+            for i in range(1,steps+1):
+                position = [0,0,0]
+                position[0] = startPosition[0] - i*dt*np.cos(angle)
+                position[1] = startPosition[1] - i*dt*np.sin(angle)
+                position[2] = 0.3
+                self.createBallFrame('fball_'+str(i),position,color = [0,0,0,0.5])
 
         # angle = angle - np.pi/2
         # angle= angle/2
@@ -500,57 +502,6 @@ class BallDeflector:
         self.moveGripper('B','init',[0,0,0.62],q)
         self.runSim(total_time)
         self.moveGripper('B','future_ball',[0,0,0.62],q)
-        # targetPose = self.C.getFrame(targetFrame).getPosition()
-        # targetPose[-1] += -0.55
-        # targetPose[0] -= 0
-        # self.moveToDest(robotName,targetPose)
-
-    def hitBallAng(self, robotName, ballFrame, goalFrame):
-        print('===== Hitting ',ballFrame,' =====')
-        dt = 20
-        steps = 12
-        total_time = dt*steps
-        observeTime = 1
-        for i in range(1,steps+1):
-            p1,p2 = self.movingBallPerception(ballFrame,observeTime)
-            position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
-            self.createBallFrame('ball_'+str(i),position,[0,0,0,1])
-
-        p1,p2 = self.movingBallPerception(ballFrame,observeTime)
-        position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
-        self.createBallFrame('future_ball',position,color = [0,1,0,0.9])
-        # self.createBallFrame('future_ball',[1, 0, .3],[0,0,0,1])
-        # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
-        goalPos = self.RealWorld.getFrame(goalFrame).getPosition()
-        goalPos[2] = 0.3
-        self.createBallFrame('goal',goalPos,[0,0,0,1])
-        startPosition = self.C.getFrame('future_ball').getPosition()
-        goalPosition = self.C.getFrame('goal').getPosition()
-        offset = 0.5
-        initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
-
-        steps = 12
-        dstep = 0.1
-        for i in range(1,steps+1):
-            position = [0,0,0]
-            position[0] = startPosition[0] - i*dstep*np.cos(angle)
-            position[1] = startPosition[1] - i*dstep*np.sin(angle)
-            position[2] = 0.3
-            self.createBallFrame('fball_'+str(i),position,[0,0,0,1])
-
-        # angle = angle - np.pi/2
-        angle = angle/2
-        q = euler_to_quaternion(angle,0,0)
-        print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
-        self.createBallFrame('init',initPosition,[0,0,0,1],[1,1,0,0.9])
-        self.moveGripper('B','init',[0,0,0.62],q)
-        self.runSim(total_time)
-        self.moveGripper('B','future_ball',[0,0,0.62],q)
-        # targetPose = self.C.getFrame(targetFrame).getPosition()
-        # targetPose[-1] += -0.55
-        # targetPose[0] -= 0
-        # self.moveToDest(robotName,targetPose)
-
 
 
     def moveGripper(self, robotName, targetFrame, targetOffset, targetOrientation):
@@ -675,7 +626,8 @@ def hitBallTest():
     M.destroy()
 
 def hitBallTestDebug():
-    M = BallDeflector()
+    M = BallDeflector(perceptionMode='cheat', debug = True)
+    M.setTarget('ball3')
     M.runSim(200)
     # Test Arm Movement
     M.hitBall('B', 'ball3', 'B_bin_base')
@@ -684,7 +636,7 @@ def hitBallTestDebug():
     M.destroy()
 
 def hitBallPerceptionTest():
-    M = BallDeflector(perceptionMode='komo')
+    M = BallDeflector(perceptionMode='komo', debug = True)
     M.setTarget('ball3')
     M.runSim(200)
     # Test Arm Movement
@@ -727,8 +679,8 @@ def perceptionTest():
 
 def main():
     # hitBallTest()
-    # hitBallTestDebug()
-    hitBallPerceptionTest()
+    hitBallTestDebug()
+    # hitBallPerceptionTest()
     # gripperOrientaionTest()
     # pickAndPlaceTest()
     # pickAndPlacePerceptionTest()
