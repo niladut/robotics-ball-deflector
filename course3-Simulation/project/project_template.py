@@ -102,14 +102,14 @@ class BallDeflector:
         self.RealWorld = ry.Config()
         self.RealWorld.addFile("../../scenarios/game_scene.g")
 
-        testBall = self.RealWorld.getFrame('ball3')
+        # testBall = self.RealWorld.getFrame('ball3')
         # objectPosition = self.testBall.getPosition()
-        testBall.setColor([0, 0, 1, 0.5 ])
+        # testBall.setColor([0, 0, 1, 0.5 ])
 
-        targetFrame = 'ball1'
-        targetObj = self.RealWorld.getFrame(targetFrame)
-        targetObj.setContact(1)
-        targetObj.setColor([1,0,0,1])
+        # targetFrame = 'ball1'
+        # targetObj = self.RealWorld.getFrame(targetFrame)
+        # targetObj.setContact(1)
+        # targetObj.setColor([1,0,0,1])
 
         # Configure Physics Engine
         self.S = self.RealWorld.simulation(ry.SimulatorEngine.physx, True)
@@ -781,9 +781,9 @@ def pickAndPlaceCheatTest():
 
 def main():
     # hitBallTest()
-    hitBallTestDebug()
+    # hitBallTestDebug()
     # gripperOrientaionTest()
-    # hitBallTestPerception()
+    hitBallTestPerception()
     # pickAndPlaceKomoTest()
     # pickAndPlaceCheatTest()
 
