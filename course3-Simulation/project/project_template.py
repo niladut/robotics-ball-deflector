@@ -460,6 +460,7 @@ class BallDeflector:
         steps = 5
         total_time = dt*steps - 30
         observeTime = 1
+        self.setTarget(ballFrame)
         for i in range(1,steps+1):
             p1,p2 = self.movingBallPerception(ballFrame,observeTime)
             position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
