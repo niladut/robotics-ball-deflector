@@ -55,7 +55,7 @@ Edit R_gripper { contact:1 }
 camera(world){
     Q:<t(0 0 2) d(0 1 90 0)>,
     shape:marker, size:[.1],
-    focalLength:0.895, width:640, height:360, zRange:[.5 100]
+    focalLength:0.895, width:640, height:360, zRange:[.5 200]
 }
 
 ball1 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, -.5, 1, 1, 0, 0, 0]> , color:[1 1 .5], contact}

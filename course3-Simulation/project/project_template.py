@@ -182,7 +182,7 @@ class BallDeflector:
 
         return p_obj, q_obj
 
-    def komoBallPose(self,obj_points, num_batch = 5):
+    def komoBallPose(self,obj_points, num_batch = 1):
         num_obj = int(obj_points.shape[0]/num_batch)
 #         permutation = np.random.permutation(obj_points.shape[0])
         permutation = np.arange(obj_points.shape[0])
@@ -203,7 +203,8 @@ class BallDeflector:
                 komo.addObjective([], ry.FS.vectorY, [self.komoBallFrame], ry.OT.eq, [1e2], order=1)
             for o in range(num_obj):
                 name = "pointCloud%i" % o
-                komo.addObjective([1.], ry.FS.distance, [self.komoBallFrame, name], ry.OT.sos, [1e0], target = [.001]) # Likelihood
+                # komo.addObjective([1.], ry.FS.distance, [self.komoBallFrame, name], ry.OT.sos, [1e0], target = [.001]) # Likelihood
+                komo.addObjective([1.], ry.FS.distance, [self.komoBallFrame, name], ry.OT.sos, [0.05], target = [.001]) # Likelihood
             komo.optimize()
 
             self.perceptionC.setFrameState(komo.getConfiguration(0))
