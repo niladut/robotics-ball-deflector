@@ -69,7 +69,7 @@ class BallDeflector:
                     position = self.RealWorld.getFrame(self.targetFrame).getPosition()
                 elif(self.perceptionMode == 'komo'):
                     position = self.perceptionGetPosition(self.targetFrame)
-                self.createBallFrame('real_ball',position,[0,0,0,1],[0,0,1,0.5])
+                self.createBallFrame('real_ball',position,[0,0,0,1],color = [0,0,1,0.9])
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
@@ -83,16 +83,17 @@ class BallDeflector:
         self.targetObj.setContact(1)
 
         self.obj = self.C.addFrame(self.targetFrame)
+        self.obj.setPosition([0,0,5])
         self.obj.setShape(ry.ST.sphere, [.05])
-        self.obj.setColor([0,0,0,0.7])
+        self.obj.setColor([0.7,0,0,0.5])
         self.obj.setContact(1)
 
 
-    def createBallFrame(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [1,0,0,0.9]):
+    def createBallFrame(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [1,0,0,0.9], contact = 1 ):
         obj = self.C.addFrame(targetFrame)
         obj.setShape(ry.ST.sphere, [.05])
         obj.setColor(color)
-        obj.setContact(1)
+        obj.setContact(contact)
         obj.setPosition(targetPosition)
         obj.setQuaternion(targetQuaternion)
         self.V.setConfiguration(self.C)
@@ -461,17 +462,18 @@ class BallDeflector:
         print('===== Hitting ',ballFrame,' =====')
         dt = 50
         steps = 6
-        total_time = dt*steps - 30
-        observeTime = 1
+        total_time = dt*steps
+        observeTime = 50
         self.setTarget(ballFrame)
-        if self.debug:
-            for i in range(1,steps+1):
-                p1,p2 = self.movingBallPerception(ballFrame,observeTime)
-                position = self.calculateFuturePosition(p1,p2, dt*i,observeTime)
-                self.createBallFrame('ball_'+str(i),position,color = [0,0,0,0.5])
+        # if self.debug:
+        #     for i in range(1,steps+1):
+        #         p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+        #         position = self.calculateFuturePosition(p1, p2, observeTime, dt*i)
+        #         self.createBallFrame('ball_'+str(i),position,color = [0,0,0,0.5])
+
 
         p1,p2 = self.movingBallPerception(ballFrame,observeTime)
-        position = self.calculateFuturePosition(p1,p2, dt*steps,observeTime)
+        position = self.calculateFuturePosition(p1,p2, observeTime, total_time)
         self.createBallFrame('future_ball',position,color = [0,1,0,0.9])
         # self.createBallFrame('future_ball',[1, 0, .3],[0,0,0,1])
         # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
@@ -494,14 +496,15 @@ class BallDeflector:
                 position[2] = 0.3
                 self.createBallFrame('fball_'+str(i),position,color = [0,0,0,0.5])
 
+        hitTimeDelay = -65 # 65 time units early
         # angle = angle - np.pi/2
         # angle= angle/2
         q = euler_to_quaternion(angle,0,0)
         print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
         self.createBallFrame('init',initPosition,[0,0,0,1],[1,1,0,0.9])
-        self.moveGripper('B','init',[0,0,0.62],q)
-        self.runSim(total_time)
-        self.moveGripper('B','future_ball',[0,0,0.62],q)
+        self.moveGripper('B','init',[0,0,0.62],q) # 30 time units
+        self.runSim(total_time + hitTimeDelay)
+        self.moveGripper('B','future_ball',[0,0,0.62],q) # 30 time units
 
 
     def moveGripper(self, robotName, targetFrame, targetOffset, targetOrientation):
@@ -573,28 +576,30 @@ class BallDeflector:
 
         print('===== Done Moving =====')
 
-    def calculateFuturePosition(self,p1,p2, timeInterval, observeTime = 10):
+    def calculateFuturePosition(self,p1,p2, observeTime, futureTimeInterval):
         # t = observeTime
 
         [vx,vy] = [(p2[0] - p1[0])/observeTime, (p2[1] - p1[1])/observeTime ]
 
         v_abs = np.sqrt(vx*vx + vy*vy)
-        distance = v_abs * (timeInterval - observeTime)
+        distance = v_abs * (futureTimeInterval - observeTime)
 
+        print('futureTimeInterval : ',futureTimeInterval)
+        print('observeTime : ',observeTime)
         print('p1 : ',p1)
         print('p2 : ',p2)
         print('vx,vy : ',[vx,vy])
         print('v_abs : ',v_abs)
         print('distance : ',distance)
-
         angle = np.arctan2((p2[1] - p1[1]),(p2[0] - p1[0]))
         position = [0,0,0]
         position[0] = p2[0] + distance*np.cos(angle)
         position[1] = p2[1] + distance*np.sin(angle)
         position[2] = p2[2]
 
-        print('future angle : ',angle, )
+        print('future angle : ',angle )
         print('future pos : ',position)
+        # input('===========calculatedFuturePosition===========')
 
         return position
 
@@ -679,8 +684,8 @@ def perceptionTest():
 
 def main():
     # hitBallTest()
-    hitBallTestDebug()
-    # hitBallPerceptionTest()
+    # hitBallTestDebug()
+    hitBallPerceptionTest()
     # gripperOrientaionTest()
     # pickAndPlaceTest()
     # pickAndPlacePerceptionTest()
