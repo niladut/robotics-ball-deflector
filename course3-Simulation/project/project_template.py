@@ -443,11 +443,15 @@ class BallDeflector:
 
         self.moveToDest(robotName,targetPose)
 
-    def movingBallPerception(self, ballFrame, observeTime, type='cheat'):
-        if(type == 'cheat'):
+    def movingBallPerception(self, ballFrame, observeTime):
+        if(self.perceptionMode == 'cheat'):
             p1 = self.RealWorld.getFrame(ballFrame).getPosition()
             self.runSim(observeTime)
             p2 = self.RealWorld.getFrame(ballFrame).getPosition()
+        elif(self.perceptionMode == 'komo'):
+            p1 = self.perceptionGetPosition(ballFrame)
+            self.runSim(observeTime)
+            p2 = self.perceptionGetPosition(ballFrame)
         else:
             # TODO: Add OpenCV Ball Position Perception
             p1 = [0,0,0]
