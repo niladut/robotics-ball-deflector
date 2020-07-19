@@ -6,6 +6,8 @@ import libry as ry
 import numpy as np
 import time
 import cv2 as cv
+import glob
+import os
 print(cv.__version__)
 def _segment_pixels(rgb, colorMode):
     rgb = cv.cvtColor(rgb, cv.COLOR_BGR2RGB) # BUG: Don't know why this is needed, but it doesn't work without this
@@ -76,21 +78,52 @@ class BallDeflector:
         self.perceptionMode = perceptionMode
         if perceptionMode == 'komo': self.setupKomoPerception()
 
+        os.system("rm -r ./images/*.png")
+
+    def stepTime(self):
+        self.t += 1
+        if self.t % 2 == 0:
+            self.exportScreenshot()
+
     def runSim(self, time_interval):
         print('===== Running Sim for ',time_interval ,' units =====')
         for i in range(time_interval):
-            if i % 50 == 0 and self.debug:
+            if self.t % 50 == 0 and self.debug:
                 if(self.perceptionMode == 'cheat'):
                     position, errPer = self.RealWorld.getFrame(self.targetFrame).getPosition()
                 elif(self.perceptionMode == 'komo'):
                     position, errPer = self.perceptionGetPosition(self.targetFrame)
                 self.createBallFrame('real_ball'+str(i),position,[0,0,0,1],color = [0,0,1,0.5])
-            # input()
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
+
+    def exportScreenshot(self):
+        img = self.S.getScreenshot()
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+        img = cv.flip(img, 0 )
+        cv.imwrite("images/"+str(self.t)+".png", img)
+
+    def convertToVideo(self):
+        img_array = []
+        files = glob.glob('./images/*.png')
+        files.sort(key=os.path.getmtime)
+        for filename in files:
+            img = cv.imread(filename)
+            height, width, layers = img.shape
+            size = (width,height)
+            img_array.append(img)
+
+        out = cv.VideoWriter('./output/project.avi',cv.VideoWriter_fourcc(*'DIVX'), 15, size)
+
+        for i in range(len(img_array)):
+            out.write(img_array[i])
+        out.release()
+
+        # os.system("rm -r ./images/*.png")
+
 
     def selectBall(self, ballFrame):
         #you can also change the shape & size
@@ -260,7 +293,7 @@ class BallDeflector:
             self.S.step([], self.tau, ry.ControlMode.none)
             print('t: {:.1f}, Perception Error: {:.3f}'.format(self.t*self.tau, errPer))
             print('t: {:.1f}, True: {}, Estimated: {}'.format(self.t*self.tau, self.targetObj.getPosition(), self.obj.getPosition()))
-            self.t += 1
+            self.stepTime()
 
     def openGripper(self, robotName):
         gripperFrame = robotName + "_gripper"
@@ -272,7 +305,7 @@ class BallDeflector:
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
         print('===== Done Opening =====')
 
     def align(self, robotName):
@@ -296,7 +329,7 @@ class BallDeflector:
             time.sleep(self.tau)
             self.S.step(q, self.tau, ry.ControlMode.position)
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
 
         print('===== Done Aligning =====')
 
@@ -321,7 +354,7 @@ class BallDeflector:
             time.sleep(self.tau)
             self.S.step(q, self.tau, ry.ControlMode.position)
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
 
         print('===== Done Aligning =====')
 
@@ -346,7 +379,7 @@ class BallDeflector:
             time.sleep(self.tau)
             self.S.step(q, self.tau, ry.ControlMode.position)
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
         self.S.closeGripper(gripperFrame)
         print('===== Closed =====')
         while True:
@@ -354,7 +387,7 @@ class BallDeflector:
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
             if self.S.getGripperIsGrasping(gripperFrame):
                 print('===== Done Closing =====')
                 self.C.attach(gripperFrame, self.targetFrame)
@@ -382,7 +415,7 @@ class BallDeflector:
             q = self.C.getJointState()
             self.S.step(q, self.tau, ry.ControlMode.position)
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
             time.sleep(self.tau)
 
         # print('===== Done Lifting =====')
@@ -401,7 +434,7 @@ class BallDeflector:
             q = self.C.getJointState()
             self.S.step(q, self.tau, ry.ControlMode.position)
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
             time.sleep(self.tau)
 
         print('===== At Initial Pose =====')
@@ -551,7 +584,7 @@ class BallDeflector:
             time.sleep(self.tau)
             self.S.step(q, self.tau, ry.ControlMode.position)
             self.V.setConfiguration(self.C)
-            self.t += 1
+            self.stepTime()
 
         print('===== Done Moving =====')
 
@@ -587,7 +620,7 @@ class BallDeflector:
         #     time.sleep(self.tau)
         #     self.S.step(q, self.tau, ry.ControlMode.position)
         #     self.V.setConfiguration(self.C)
-        #     self.t += 1
+        #     self.stepTime()
 
         print('===== Done Moving =====')
 
@@ -772,6 +805,23 @@ def runSimTest():
     input('Done...')
     M.destroy()
 
+def exportVideoTest():
+    ballFrame = "ball3"
+    M = BallDeflector(perceptionMode='komo', debug = True)
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'G_bin_base')
+    M.runSim(700)
+    M.clearExtraFrames()
+    M.runSim(100)
+    M.convertToVideo()
+    input('Done...')
+    M.destroy()
+
+
 def main():
     # hitBallTest()
     # hitBallTestDebug()
@@ -781,8 +831,9 @@ def main():
     # pickAndPlacePerceptionTest()
     # perceptionTest()
     # fullScenePerceptionTest()
-    fullScenePerceptionTest2()
+    # fullScenePerceptionTest2()
     # runSimTest()
+    exportVideoTest()
 
 if __name__ == "__main__":
     main()
