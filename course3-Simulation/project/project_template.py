@@ -661,6 +661,18 @@ def perceptionTest():
     input('Done...')
     M.destroy()
 
+def fullScenePerceptionTest():
+    ballFrame = "ball1"
+    M = BallDeflector(perceptionMode='komo', debug = True)
+    M.setTarget(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', 'ball3', 'B_bin_base')
+    M.runSim(700)
+    input('Done...')
+    M.destroy()
 
 def main():
     # hitBallTest()
@@ -668,8 +680,9 @@ def main():
     # hitBallPerceptionTest()
     # gripperOrientaionTest()
     # pickAndPlaceTest()
-    pickAndPlacePerceptionTest()
+    # pickAndPlacePerceptionTest()
     # perceptionTest()
+    fullScenePerceptionTest()
 
 if __name__ == "__main__":
     main()
