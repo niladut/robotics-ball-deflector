@@ -1,7 +1,7 @@
 world {}
 
 table (world){
-    shape:ssBox, Q:<t(0 0. .2)>, size:[4. 4. .1 .02], color:[.2 .55 0.2]
+    shape:ssBox, Q:<t(0 0. .2)>, size:[4. 4. .1 .02], color:[.2 .2 0.2]
     contact, logical:{ }
     friction:.1
 }
@@ -59,9 +59,9 @@ camera(world){
 }
 
 # ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-0.75, 0, 1.5, 1, 0, 0, 0]> , color:[0 0 0], contact}
-ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .75, 1,  1, 0, 0, 0]> , color:[0 0 0], contact}
+ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .75, 1,  1, 0, 0, 0]> , color:[0 0 1], contact}
 
-ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .65, 1,  1, 0, 0, 0]> , color:[0 0 0], contact}
+ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .60, 1,  1, 0, 0, 0]> , color:[0 1 0], contact}
 # ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[0, 0, 1,  1, 0, 0, 0]> , color:[1 0 0], contact}
 
 ball1 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .45, 1,  1, 0, 0, 0]> , color:[1 0 0], contact}
@@ -82,20 +82,23 @@ ramp_1 (table) {
 
 #shape deflector(table) { type=mesh rel=<T 1.2 0 .3 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
 
-shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[0.3 0.6 1] }
+shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[0.6 1 1] }
 #1/sqrt2
 #deflector_side (deflector) {shape:ssBox, Q:<t(-2 0 .1)>, size:[.1 0.1 .01 .01], color:[.7 .5 .5]}
 
 
-Prefix: "A_"
+Prefix: "R_"
 Include: 'bin.g'
 
-Prefix: "B_"
+Prefix: "G_"
 Include: 'bin.g'
 
-Edit A_bin_base (table) { Q:<t(.1 -1.5 0) d(-135 0 0 1)> ,color:[1 .5 1]}
-Edit B_bin_base (table) { Q:<t(.1 1.5 0) d(135 0 0 1)> ,color:[.5 1 .5]}
+# Prefix: "B_"
+# Include: 'bin.g'
 
+Edit R_bin_base (table) { Q:<t(.1 -1.5 0) d(-135 0 0 1)> ,color:[1 0 0 1]}
+Edit G_bin_base (table) { Q:<t(.1 1.5 0) d(135 0 0 1)> ,color:[0 1 0 1]}
+# Edit B_bin_base (table) { Q:<t(.1 1.5 0) d(135 0 0 1)> ,color:[.5 1 .5]}
 
 #shape bin_1 (table){ type=mesh rel=<T .1 -1.5 .15 0.38268 0 0 0.92387 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[1 1 .5] }
 #shape bin_2 (table){ type=mesh rel=<T .1 1.5 .15 0.92387 0 0 0.38268 >  mesh='bin.stl'  meshscale=0.02  rel_includes_mesh_center,   color:[.5 1 .5] }

@@ -5,14 +5,28 @@ sys.path.append('../../build')
 import libry as ry
 import numpy as np
 import time
-import cv2
-print(cv2.__version__)
-def _segment_redpixels(img):
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    mask1 = cv2.inRange(hsv, (  0, 120, 70), ( 10, 255, 255))
-    mask2 = cv2.inRange(hsv, (170, 120, 70), (180, 255, 255))
-    return mask1 + mask2
+import cv2 as cv
+print(cv.__version__)
+def _segment_pixels(rgb, colorMode):
+    rgb = cv.cvtColor(rgb, cv.COLOR_BGR2RGB) # BUG: Don't know why this is needed, but it doesn't work without this
 
+    # Red Pixels
+    if colorMode == 'r':
+        hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
+        mask1 = cv.inRange(hsv, (  0, 120, 70), ( 10, 255, 255))
+        mask2 = cv.inRange(hsv, (170, 120, 70), (180, 255, 255))
+        mask = mask1 + mask2
+    # Green Pixels
+    elif colorMode == 'g':
+        hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
+        mask = cv.inRange(hsv, (50, 120, 70), ( 86, 255, 255))
+    # Blue Pixels
+    elif colorMode == 'b':
+        hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
+        mask = cv.inRange(hsv, (100,150,0), ( 140, 255, 255))
+    # print(mask)
+    # input()
+    return mask
 
 def _image_pointcloud(depth, rgb, mask):
     mask_pixels = np.where(mask>0)
@@ -41,8 +55,8 @@ def _meter_pointcloud(pixel_points, cameraFrame, fxfypxpy):
     return points, rel_points # (num_points, 3)
 
 
-def find_redpixels(rgb, depth, cameraFrame, fxfypxpy):
-    mask = _segment_redpixels(rgb)
+def find_pixels(rgb, depth, cameraFrame, fxfypxpy, colorMode):
+    mask = _segment_pixels(rgb, colorMode)
     pixel_points, masked_rgb = _image_pointcloud(depth, rgb, mask)
     obj_points, rel_points = _meter_pointcloud(pixel_points, cameraFrame, fxfypxpy)
     return obj_points, rel_points, masked_rgb
@@ -57,6 +71,8 @@ class BallDeflector:
 
         self.setupSim()
         self.setupC()
+
+        self.extraFrameList = []
         self.perceptionMode = perceptionMode
         if perceptionMode == 'komo': self.setupKomoPerception()
 
@@ -69,7 +85,7 @@ class BallDeflector:
                 elif(self.perceptionMode == 'komo'):
                     position, errPer = self.perceptionGetPosition(self.targetFrame)
                 self.createBallFrame('real_ball'+str(i),position,[0,0,0,1],color = [0,0,1,0.5])
-            input()
+            # input()
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
@@ -78,19 +94,20 @@ class BallDeflector:
 
     def selectBall(self, ballFrame):
         #you can also change the shape & size
-        obj = self.RealWorld.getFrame(ballFrame)
-        obj.setPosition([0, 0, 1])
+        # obj = self.RealWorld.getFrame(ballFrame)
+        if ballFrame == 'ball1':
+            colorMode = 'r'
+        elif ballFrame == 'ball2':
+            colorMode = 'g'
+        elif ballFrame == 'ball3':
+            colorMode = 'b'
+        else:
+            colorMode = 'invalid'
+
+        print('============',ballFrame,' selects ',colorMode, ' color ==============')
         # input()
-        # obj.setPosition([-1.5, .5, 1])
-        # self.S.setJointState(self.q0)
-        # obj.setContact(1)
-        # self.S = self.RealWorld.simulation(ry.SimulatorEngine.physx, True)
-        # Attach Camera Sensor
-        # self.S.addSensor("camera")
-        # self.S.step([], self.tau, ry.ControlMode.none)
-        # self.C.setJointState(self.S.get_q())
-        # self.V.setConfiguration(self.C)
-        # input()
+
+        self.colorMode = colorMode
         self.setTarget(ballFrame)
 
     def setTarget(self, ballFrame):
@@ -100,7 +117,7 @@ class BallDeflector:
         self.targetObj.setContact(1)
         self.obj = self.createBallFrame(ballFrame, targetPosition = [0,0,1], color = [0,1,1,0.5], contact = 1 )
 
-        input()
+        # input()
 
     def createBallFrame(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [0,1,0,0.9], contact = 1 ):
         obj = self.C.addFrame(targetFrame)
@@ -110,7 +127,15 @@ class BallDeflector:
         obj.setPosition(targetPosition)
         obj.setQuaternion(targetQuaternion)
         self.V.setConfiguration(self.C)
+        self.extraFrameList.append(targetFrame)
         return obj
+
+    def clearExtraFrames(self):
+        for frame in self.extraFrameList:
+            self.C.delFrame(frame)
+            print('Deleting frame : ', frame)
+        self.V.setConfiguration(self.C)
+
 
     def setupSim(self):
         #-- REAL WORLD configuration, which is attached to the physics engine
@@ -212,7 +237,7 @@ class BallDeflector:
             self.V.setConfiguration(self.C)
             errPer = 0.
         elif self.perceptionMode == 'komo':
-            obj_points, rel_points, masked_rgb = find_redpixels(rgb, depth, self.cameraFrame, self.fxfypxpy)
+            obj_points, rel_points, masked_rgb = find_pixels(rgb, depth, self.cameraFrame, self.fxfypxpy, self.colorMode)
             self.cameraFrame.setPointCloud(rel_points, masked_rgb)
             self.V.recopyMeshes(self.C)
             errPer = np.inf
@@ -615,7 +640,7 @@ def hitBallTest():
     M = BallDeflector()
     M.runSim(200)
     # Test Arm Movement
-    M.hitBall('B', 'ball3', 'B_bin_base')
+    M.hitBall('B', 'ball3', 'R_bin_base')
     M.runSim(700)
     input('Done...')
     M.destroy()
@@ -625,7 +650,7 @@ def hitBallTestDebug():
     M.setTarget('ball3')
     M.runSim(200)
     # Test Arm Movement
-    M.hitBall('B', 'ball3', 'B_bin_base')
+    M.hitBall('B', 'ball3', 'R_bin_base')
     M.runSim(700)
     input('Done...')
     M.destroy()
@@ -635,7 +660,7 @@ def hitBallPerceptionTest():
     M.setTarget('ball3')
     M.runSim(200)
     # Test Arm Movement
-    M.hitBall('B', 'ball3', 'B_bin_base')
+    M.hitBall('B', 'ball3', 'R_bin_base')
     M.runSim(700)
     input('Done...')
     M.destroy()
@@ -682,34 +707,68 @@ def fullScenePerceptionTest():
     M.pickAndPlace('A', ballFrame, "ramp_1")
     M.runSim(200)
     # Test Arm Movement
-    M.hitBall('B', 'ball3', 'B_bin_base')
+    M.hitBall('B', 'ball3', 'R_bin_base')
     M.runSim(700)
     input('Done...')
     M.destroy()
 
 def fullScenePerceptionTest():
-    ballFrame = "ball1"
+    ballFrame = "ball3"
     M = BallDeflector(perceptionMode='komo', debug = True)
-    M.setTarget(ballFrame)
+    M.selectBall(ballFrame)
     M.runSim(200)
     M.pickAndPlace('A', ballFrame, "ramp_1")
     M.runSim(200)
     # Test Arm Movement
-    M.hitBall('B', 'ball3', 'B_bin_base')
+    M.hitBall('B', ballFrame, 'R_bin_base')
     M.runSim(700)
+    M.clearExtraFrames()
     input('Done...')
+    M.runSim(100)
     M.destroy()
 
 def fullScenePerceptionTest2():
     M = BallDeflector(perceptionMode='komo', debug = True)
+    ballFrame = "ball3"
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'R_bin_base')
+    M.clearExtraFrames()
+
+
+    ballFrame = "ball2"
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'G_bin_base')
+    M.clearExtraFrames()
+
+
     ballFrame = "ball1"
     M.selectBall(ballFrame)
     M.runSim(200)
     M.pickAndPlace('A', ballFrame, "ramp_1")
     M.runSim(200)
     # Test Arm Movement
-    M.hitBall('B', ballFrame, 'B_bin_base')
+    M.hitBall('B', ballFrame, 'R_bin_base')
     M.runSim(700)
+    M.clearExtraFrames()
+    M.runSim(100)
+    input('Done...')
+    M.destroy()
+
+def runSimTest():
+    ballFrame = "ball3"
+    M = BallDeflector(perceptionMode='komo', debug = True)
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.clearExtraFrames()
+    M.runSim(100)
     input('Done...')
     M.destroy()
 
@@ -721,7 +780,9 @@ def main():
     # pickAndPlaceTest()
     # pickAndPlacePerceptionTest()
     # perceptionTest()
+    # fullScenePerceptionTest()
     fullScenePerceptionTest2()
+    # runSimTest()
 
 if __name__ == "__main__":
     main()
