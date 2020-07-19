@@ -82,7 +82,7 @@ ramp_1 (table) {
 
 #shape deflector(table) { type=mesh rel=<T 1.2 0 .3 0.7071 0 0 -0.7071 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[1 0 0] }
 
-shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[0.6 1 1] }
+shape deflector(B_gripper) { type=mesh rel=<T 0 0 -0.55 1 0 0 0 >  mesh='deflector.stl'  meshscale=0.0014  rel_includes_mesh_center,   color:[0.6 1 1] , contact}
 #1/sqrt2
 #deflector_side (deflector) {shape:ssBox, Q:<t(-2 0 .1)>, size:[.1 0.1 .01 .01], color:[.7 .5 .5]}
 
