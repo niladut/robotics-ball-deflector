@@ -76,17 +76,13 @@ class BallDeflector:
             self.V.setConfiguration(self.C)
             self.t += 1
 
-    def setTarget(self, targetFrame):
+    def setTarget(self, targetFrame, color = None):
         self.targetFrame = targetFrame
         #you can also change the shape & size
         self.targetObj = self.RealWorld.getFrame(self.targetFrame)
         self.targetObj.setContact(1)
 
-        self.obj = self.C.addFrame(self.targetFrame)
-        self.obj.setPosition([0,0,1])
-        self.obj.setShape(ry.ST.sphere, [.05])
-        self.obj.setColor([0,1,1,0.5])
-        self.obj.setContact(1)
+        self.obj = self.createBallFrame(targetFrame, targetPosition = [0,0,1], color = [0,1,1,0.5], contact = 1 )
 
 
     def createBallFrame(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [0,1,0,0.9], contact = 1 ):
@@ -658,6 +654,19 @@ def perceptionTest():
     M.setTarget(ballFrame)
     M.runSim(200)
     M.testPerception(ballFrame,50)
+    input('Done...')
+    M.destroy()
+
+def fullScenePerceptionTest():
+    ballFrame = "ball1"
+    M = BallDeflector(perceptionMode='komo', debug = True)
+    M.setTarget(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', 'ball3', 'B_bin_base')
+    M.runSim(700)
     input('Done...')
     M.destroy()
 
