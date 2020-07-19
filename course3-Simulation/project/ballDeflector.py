@@ -5,13 +5,12 @@ sys.path.append('../../build')
 import libry as ry
 import numpy as np
 import time
-import cv2 as cv
-print(cv.__version__)
-def _segment_redpixels(rgb):
-    rgb = cv.cvtColor(rgb, cv.COLOR_BGR2RGB)
-    hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
-    mask1 = cv.inRange(hsv, (  0, 120, 70), ( 10, 255, 255))
-    mask2 = cv.inRange(hsv, (170, 120, 70), (180, 255, 255))
+import cv2
+print(cv2.__version__)
+def _segment_redpixels(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask1 = cv2.inRange(hsv, (  0, 120, 70), ( 10, 255, 255))
+    mask2 = cv2.inRange(hsv, (170, 120, 70), (180, 255, 255))
     return mask1 + mask2
 
 
@@ -70,20 +69,38 @@ class BallDeflector:
                 elif(self.perceptionMode == 'komo'):
                     position, errPer = self.perceptionGetPosition(self.targetFrame)
                 self.createBallFrame('real_ball'+str(i),position,[0,0,0,1],color = [0,0,1,0.5])
+            input()
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
             self.V.setConfiguration(self.C)
             self.t += 1
 
-    def setTarget(self, targetFrame, color = None):
-        self.targetFrame = targetFrame
+    def selectBall(self, ballFrame):
         #you can also change the shape & size
-        self.targetObj = self.RealWorld.getFrame(self.targetFrame)
+        obj = self.RealWorld.getFrame(ballFrame)
+        obj.setPosition([0, 0, 1])
+        # input()
+        # obj.setPosition([-1.5, .5, 1])
+        # self.S.setJointState(self.q0)
+        # obj.setContact(1)
+        # self.S = self.RealWorld.simulation(ry.SimulatorEngine.physx, True)
+        # Attach Camera Sensor
+        # self.S.addSensor("camera")
+        # self.S.step([], self.tau, ry.ControlMode.none)
+        # self.C.setJointState(self.S.get_q())
+        # self.V.setConfiguration(self.C)
+        # input()
+        self.setTarget(ballFrame)
+
+    def setTarget(self, ballFrame):
+        self.targetFrame = ballFrame
+        #you can also change the shape & size
+        self.targetObj = self.RealWorld.getFrame(ballFrame)
         self.targetObj.setContact(1)
+        self.obj = self.createBallFrame(ballFrame, targetPosition = [0,0,1], color = [0,1,1,0.5], contact = 1 )
 
-        self.obj = self.createBallFrame(targetFrame, targetPosition = [0,0,1], color = [0,1,1,0.5], contact = 1 )
-
+        input()
 
     def createBallFrame(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [0,1,0,0.9], contact = 1 ):
         obj = self.C.addFrame(targetFrame)
@@ -683,6 +700,19 @@ def fullScenePerceptionTest():
     input('Done...')
     M.destroy()
 
+def fullScenePerceptionTest2():
+    M = BallDeflector(perceptionMode='komo', debug = True)
+    ballFrame = "ball1"
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'B_bin_base')
+    M.runSim(700)
+    input('Done...')
+    M.destroy()
+
 def main():
     # hitBallTest()
     # hitBallTestDebug()
@@ -691,7 +721,7 @@ def main():
     # pickAndPlaceTest()
     # pickAndPlacePerceptionTest()
     # perceptionTest()
-    fullScenePerceptionTest()
+    fullScenePerceptionTest2()
 
 if __name__ == "__main__":
     main()
