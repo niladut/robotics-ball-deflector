@@ -66,7 +66,7 @@ def find_pixels(rgb, depth, cameraFrame, fxfypxpy, colorMode):
 
 
 class BallDeflector:
-    def __init__(self, perceptionMode='cheat', debug = False):
+    def __init__(self, perceptionMode='cheat', exportVideoMode = False, debug = False):
         self.tau = 0.01
         self.t = 0
         self.debug = debug
@@ -74,15 +74,19 @@ class BallDeflector:
         self.setupSim()
         self.setupC()
 
-        self.extraFrameList = []
+
+        self.exportVideoMode = exportVideoMode
+        if self.exportVideoMode:
+            self.extraFrameList = []
+            os.system("rm -r ./images/*.png")
+        
         self.perceptionMode = perceptionMode
         if perceptionMode == 'komo': self.setupKomoPerception()
 
-        os.system("rm -r ./images/*.png")
 
     def stepTime(self):
         self.t += 1
-        if self.t % 2 == 0:
+        if self.t % 2 == 0 and self.exportVideoMode :
             self.exportScreenshot()
 
     def runSim(self, time_interval):
@@ -443,6 +447,8 @@ class BallDeflector:
         self.S = 0
         self.C = 0
         self.V = 0
+        if self.exportVideoMode:
+            self.convertToVideo()
 
     def pickAndLift(self, robotName, targetFrame):
         self.setTarget(targetFrame)
@@ -807,7 +813,8 @@ def runSimTest():
 
 def exportVideoTest():
     ballFrame = "ball3"
-    M = BallDeflector(perceptionMode='komo', debug = True)
+    M = BallDeflector(perceptionMode='komo', exportVideoMode = True, debug = True)
+    input('Start...')
     M.selectBall(ballFrame)
     M.runSim(200)
     M.pickAndPlace('A', ballFrame, "ramp_1")
@@ -817,7 +824,6 @@ def exportVideoTest():
     M.runSim(700)
     M.clearExtraFrames()
     M.runSim(100)
-    M.convertToVideo()
     input('Done...')
     M.destroy()
 
