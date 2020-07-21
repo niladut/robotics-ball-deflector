@@ -58,8 +58,8 @@ camera(world){
     focalLength:0.895, width:640, height:360, zRange:[.5 100]
 }
 
-# ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-0.75, 0, 1.5, 1, 0, 0, 0]> , color:[0 0 0], contact}
-ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.35, .60, 1,  1, 0, 0, 0]> , color:[0 0 1], contact}
+ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-0.75, 0, 1.5, 1, 0, 0, 0]> , color:[0 0 1], contact}
+# ball3 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.35, .60, 1,  1, 0, 0, 0]> , color:[0 0 1], contact}
 
 ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[-1.5, .60, 1,  1, 0, 0, 0]> , color:[0 1 0], contact}
 # ball2 	{  shape:sphere, size:[.05],, mass:0.2 X:<[0, 0, 1,  1, 0, 0, 0]> , color:[1 0 0], contact}

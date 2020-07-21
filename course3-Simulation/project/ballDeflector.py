@@ -74,7 +74,7 @@ class MovingObject:
         self.objectFrame = objectFrame
         self.startPosition = startPosition
         self.endPosition = endPosition
-        self.goalPosition = self.endPosition
+        self.goalPosition = endPosition
         self.totalTime = totalTime
         self.loopPath = loopPath
         self.goalTolerance = 0.01
@@ -98,8 +98,13 @@ class MovingObject:
         print('speed : ',self.speed)
 
 
-    def updatePosition(self, deltaTime):
-        position = self.currentPosition
+    def getNextPosition(self,currentPosition, deltaTime):
+
+        position = currentPosition
+
+        if(getDistance(position,self.goalPosition) <= self.goalTolerance):
+            self.toggleGoal()
+
         [vx, vy, vz] = self.velocity
 
         position[0] = position[0] + vx * deltaTime
@@ -225,8 +230,9 @@ class BallDeflector:
 
     def updateMovingObjects(self):
         for object in self.movingObjects:
-            targetPosition = object.updatePosition(self.tau)
             objectFrame = object.objectFrame
+            currentPosition = self.RealWorld.getFrame(objectFrame).getPosition()
+            targetPosition = object.getNextPosition(currentPosition, self.tau)
             print('Update Moving Obj ' + objectFrame)
             self.moveObject(objectFrame, targetPosition)
 
@@ -662,6 +668,65 @@ class BallDeflector:
         self.runSim(total_time + hitTimeDelay)
         self.moveGripper('B','future_ball',[0,0,0.63],q) # 30 time units
 
+    def hitBallMovingObjects(self, robotName, ballFrame, goalFrame):
+        print('===== Hitting ',ballFrame,' =====')
+        dt = 50
+        steps = 6
+        total_time = dt*steps
+        observeTime = 50
+        self.setTarget(ballFrame)
+        # if self.debug:
+        #     for i in range(1,steps+1):
+        #         p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+        #         position = self.calculateFuturePosition(p1, p2, observeTime, dt*i)
+        #         self.createBallFrame('ball_'+str(i),position,color = [0,0,0,0.5])
+
+
+        p1,p2 = self.movingBallPerception(ballFrame,observeTime)
+        position = self.calculateFuturePosition(p1,p2, observeTime, total_time)
+        self.createBallFrame('future_ball',position,color = [0,1,0,0.3],contact = 0)
+        # self.createBallFrame('future_ball',[1, 0, .3],[0,0,0,1])
+        # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
+        goalPos = None
+        for object in self.movingObjects:
+            if object.obejctFrame == goalFrame:
+                p1 = self.RealWorld.getFrame(goalFrame).getPosition()
+                p2 = object.getNextPosition(p1,self.tau)
+                total_time = 1000
+                goalPos = self.calculateFuturePosition(p1,p2, observeTime, total_time)
+                goalPos[2] = 0.3
+
+        if goalPos == None:
+            print("no Object moving" + goalFrame)
+            return
+        self.createBallFrame('goal',goalPos,[0,0,0,1],contact = 0)
+        startPosition = self.C.getFrame('future_ball').getPosition()
+        goalPosition = self.C.getFrame('goal').getPosition()
+        offset = 0.5
+        initPosition, angle = self.calculateDeflectorInit('B',startPosition, goalPosition, offset)
+
+        # Predict Future Trajectory
+        if self.debug:
+            steps = 9
+            dt = 0.2
+            for i in range(1,steps+1):
+                position = [0,0,0]
+                position[0] = startPosition[0] - i*dt*np.cos(angle)
+                position[1] = startPosition[1] - i*dt*np.sin(angle)
+                position[2] = 0.3
+                self.createBallFrame('fball_'+str(i),position,color = [0,0,0,0.3],contact = 0)
+
+        hitTimeDelay = -65 # 65 time units early
+        # angle = angle - np.pi/2
+        # angle= angle/2
+        q = euler_to_quaternion(angle,0,0)
+        print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
+        self.createBallFrame('init',initPosition,[0,0,0,1],[1,1,0,0.3],contact = 0)
+        self.moveGripper('B','init',[0,0,0.63],q) # 30 time units
+        self.runSim(total_time + hitTimeDelay)
+        self.moveGripper('B','future_ball',[0,0,0.63],q) # 30 time units
+
+
 
     def moveGripper(self, robotName, targetFrame, targetOffset, targetOrientation):
         gripperCenterFrame = robotName + "_gripperCenter"
@@ -975,8 +1040,6 @@ def movingBinTest():
     M.movingObjects.append(mObj)
     M.selectBall(ballFrame)
     M.runSim(200)
-    M.pickAndPlace('A', ballFrame, "ramp_1")
-    M.runSim(200)
     # Test Arm Movement
     M.hitBall('B', ballFrame, 'G_bin_base')
     M.runSim(700)
@@ -994,7 +1057,7 @@ def singleBallScene():
     M.pickAndPlace('A', ballFrame, "ramp_1")
     M.runSim(200)
     # Test Arm Movement
-    M.hitBall('B', ballFrame, 'G_bin_base')
+    M.hitBallMovingObjects('B', ballFrame, 'G_bin_base')
     M.runSim(700)
     M.clearExtraFrames()
     M.runSim(100)
