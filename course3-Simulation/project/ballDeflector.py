@@ -9,28 +9,24 @@ import cv2 as cv
 import glob
 import os
 print(cv.__version__)
-def _segment_pixels(rgb, colorMode):
+def segmentColorPixels(rgb, colorMode):
     rgb = cv.cvtColor(rgb, cv.COLOR_BGR2RGB) # BUG: Don't know why this is needed, but it doesn't work without this
-
+    hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
     # Red Pixels
     if colorMode == 'r':
-        hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
         mask1 = cv.inRange(hsv, (  0, 120, 70), ( 10, 255, 255))
         mask2 = cv.inRange(hsv, (170, 120, 70), (180, 255, 255))
         mask = mask1 + mask2
     # Green Pixels
     elif colorMode == 'g':
-        hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
         mask = cv.inRange(hsv, (50, 120, 70), ( 86, 255, 255))
     # Blue Pixels
     elif colorMode == 'b':
-        hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
         mask = cv.inRange(hsv, (100,150,0), ( 140, 255, 255))
-    # print(mask)
     # input()
     return mask
 
-def _image_pointcloud(depth, rgb, mask):
+def depthImageToPCL(depth, rgb, mask):
     mask_pixels = np.where(mask>0)
     pointcloud = np.empty((mask_pixels[0].shape[0], 3))
     pointcloud[:,0] = mask_pixels[1]  # x pixels
@@ -41,7 +37,7 @@ def _image_pointcloud(depth, rgb, mask):
     return pointcloud, masked_rgb
 
 
-def _meter_pointcloud(pixel_points, cameraFrame, fxfypxpy):
+def pclToCameraCoordinate(pixel_points, cameraFrame, fxfypxpy):
     x = pixel_points[:,0]
     y = pixel_points[:,1]
     d = pixel_points[:,2]
@@ -58,9 +54,9 @@ def _meter_pointcloud(pixel_points, cameraFrame, fxfypxpy):
 
 
 def find_pixels(rgb, depth, cameraFrame, fxfypxpy, colorMode):
-    mask = _segment_pixels(rgb, colorMode)
-    pixel_points, masked_rgb = _image_pointcloud(depth, rgb, mask)
-    obj_points, rel_points = _meter_pointcloud(pixel_points, cameraFrame, fxfypxpy)
+    mask = segmentColorPixels(rgb, colorMode)
+    pixel_points, masked_rgb = depthImageToPCL(depth, rgb, mask)
+    obj_points, rel_points = pclToCameraCoordinate(pixel_points, cameraFrame, fxfypxpy)
     return obj_points, rel_points, masked_rgb
 
 
@@ -77,16 +73,22 @@ class BallDeflector:
 
         self.exportVideoMode = exportVideoMode
         if self.exportVideoMode:
+            self.speed_scale = 2
             self.extraFrameList = []
-            os.system("rm -r ./images/*.png")
-        
+            os.system("mkdir -p images/sim_view")
+            os.system("mkdir -p images/config_view")
+            os.system("mkdir -p images/cam_rgb_view")
+            os.system("rm -r ./images/sim_view/*.png")
+            os.system("rm -r ./images/config_view/*.png")
+            os.system("rm -r ./images/cam_rgb_view/*.png")
+
         self.perceptionMode = perceptionMode
         if perceptionMode == 'komo': self.setupKomoPerception()
 
 
     def stepTime(self):
         self.t += 1
-        if self.t % 2 == 0 and self.exportVideoMode :
+        if self.t % self.speed_scale == 0 and self.exportVideoMode :
             self.exportScreenshot()
 
     def runSim(self, time_interval):
@@ -97,7 +99,7 @@ class BallDeflector:
                     position, errPer = self.RealWorld.getFrame(self.targetFrame).getPosition()
                 elif(self.perceptionMode == 'komo'):
                     position, errPer = self.perceptionGetPosition(self.targetFrame)
-                self.createBallFrame('real_ball'+str(i),position,[0,0,0,1],color = [0,0,1,0.5])
+                self.createBallFrame('real_ball'+str(i),position,[0,0,0,1],color = [0,1,1,0.3])
             time.sleep(self.tau)
             self.S.step([], self.tau, ry.ControlMode.none)
             self.C.setJointState(self.S.get_q())
@@ -105,10 +107,31 @@ class BallDeflector:
             self.stepTime()
 
     def exportScreenshot(self):
+        frame_num = int(self.t / self.speed_scale)
+        frame_num = str(frame_num)
+        frame_num = frame_num.zfill(5)
+        img_name = "img-"+frame_num+".png"
+
         img = self.S.getScreenshot()
         img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         img = cv.flip(img, 0 )
-        cv.imwrite("images/"+str(self.t)+".png", img)
+        cv.imwrite("images/sim_view/"+img_name, img)
+
+
+        img = self.V.getScreenshot()
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+        img = cv.flip(img, 0 )
+        cv.imwrite("images/config_view/"+img_name, img)
+
+        [img,depth] = self.S.getImageAndDepth()
+        img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+        # img = cv.flip(img, 0 )
+        cv.imwrite("images/cam_rgb_view/"+img_name, img)
+
+        # depth =  cv.cvtColor(depth, cv.IMREAD_GRAYSCALE)
+        # depth = cv.flip(depth, 0 )
+        # cv.imwrite("images/cam_depth/"+str(self.t)+".png", depth)
+
 
     def convertToVideo(self):
         img_array = []
@@ -152,11 +175,11 @@ class BallDeflector:
         #you can also change the shape & size
         self.targetObj = self.RealWorld.getFrame(ballFrame)
         self.targetObj.setContact(1)
-        self.obj = self.createBallFrame(ballFrame, targetPosition = [0,0,1], color = [0,1,1,0.5], contact = 1 )
+        self.obj = self.createBallFrame(ballFrame, targetPosition = [0,0,0], color = [0,1,1,0.3], contact = 1 )
 
         # input()
 
-    def createBallFrame(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [0,1,0,0.9], contact = 1 ):
+    def createBallFrame(self, targetFrame, targetPosition = [0,0,0], targetQuaternion = [0,0,0,1], color = [0,1,0,0.3], contact = 1 ):
         obj = self.C.addFrame(targetFrame)
         obj.setShape(ry.ST.sphere, [.05])
         obj.setColor(color)
@@ -447,8 +470,8 @@ class BallDeflector:
         self.S = 0
         self.C = 0
         self.V = 0
-        if self.exportVideoMode:
-            self.convertToVideo()
+        # if self.exportVideoMode:
+        #     self.convertToVideo()
 
     def pickAndLift(self, robotName, targetFrame):
         self.setTarget(targetFrame)
@@ -528,7 +551,7 @@ class BallDeflector:
 
         p1,p2 = self.movingBallPerception(ballFrame,observeTime)
         position = self.calculateFuturePosition(p1,p2, observeTime, total_time)
-        self.createBallFrame('future_ball',position,color = [0,1,0,0.9])
+        self.createBallFrame('future_ball',position,color = [0,1,0,0.3])
         # self.createBallFrame('future_ball',[1, 0, .3],[0,0,0,1])
         # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
         goalPos = self.RealWorld.getFrame(goalFrame).getPosition()
@@ -548,14 +571,14 @@ class BallDeflector:
                 position[0] = startPosition[0] - i*dt*np.cos(angle)
                 position[1] = startPosition[1] - i*dt*np.sin(angle)
                 position[2] = 0.3
-                self.createBallFrame('fball_'+str(i),position,color = [0,0,0,0.5])
+                self.createBallFrame('fball_'+str(i),position,color = [0,0,0,0.3])
 
         hitTimeDelay = -65 # 65 time units early
         # angle = angle - np.pi/2
         # angle= angle/2
         q = euler_to_quaternion(angle,0,0)
         print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
-        self.createBallFrame('init',initPosition,[0,0,0,1],[1,1,0,0.9])
+        self.createBallFrame('init',initPosition,[0,0,0,1],[1,1,0,0.3])
         self.moveGripper('B','init',[0,0,0.62],q) # 30 time units
         self.runSim(total_time + hitTimeDelay)
         self.moveGripper('B','future_ball',[0,0,0.62],q) # 30 time units
@@ -707,7 +730,7 @@ def hitBallPerceptionTest():
 def gripperOrientaionTest():
     M = BallDeflector()
     ballPosition = [1, 0, .3]
-    M.createBallFrame('testball',ballPosition, [0,0,0,1],[0,1,1,0.7])
+    M.createBallFrame('testball',ballPosition, [0,0,0,1],[0,1,1,0.3])
     targetOffset = [0,0,0.62]
     degrees = 150 #-58.59447385472987
     targetOrientation = euler_to_quaternion(degrees*np.pi/180,0,-45*np.pi/180)
@@ -801,6 +824,42 @@ def fullScenePerceptionTest2():
     input('Done...')
     M.destroy()
 
+def fullScenePerceptionWithVideo():
+    M = BallDeflector(perceptionMode='komo', debug = True, exportVideoMode = True)
+    input('Start...')
+    ballFrame = "ball3"
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'R_bin_base')
+    M.runSim(200)
+    M.clearExtraFrames()
+
+
+    ballFrame = "ball2"
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'G_bin_base')
+    M.clearExtraFrames()
+
+
+    ballFrame = "ball1"
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'R_bin_base')
+    M.runSim(700)
+    M.clearExtraFrames()
+    input('Done...')
+    M.destroy()
+
 def runSimTest():
     ballFrame = "ball3"
     M = BallDeflector(perceptionMode='komo', debug = True)
@@ -828,6 +887,22 @@ def exportVideoTest():
     M.destroy()
 
 
+def exportVideoTest():
+    ballFrame = "ball3"
+    M = BallDeflector(perceptionMode='komo', exportVideoMode = True, debug = True)
+    input('Start...')
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'G_bin_base')
+    M.runSim(700)
+    M.clearExtraFrames()
+    M.runSim(100)
+    input('Done...')
+    M.destroy()
+
 def main():
     # hitBallTest()
     # hitBallTestDebug()
@@ -838,8 +913,9 @@ def main():
     # perceptionTest()
     # fullScenePerceptionTest()
     # fullScenePerceptionTest2()
+    fullScenePerceptionWithVideo()
     # runSimTest()
-    exportVideoTest()
+    # exportVideoTest()
 
 if __name__ == "__main__":
     main()
