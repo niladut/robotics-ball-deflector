@@ -60,7 +60,64 @@ def find_pixels(rgb, depth, cameraFrame, fxfypxpy, colorMode):
     obj_points, rel_points = pclToCameraCoordinate(pixel_points, cameraFrame, fxfypxpy)
     return obj_points, rel_points, masked_rgb
 
+def getDistance(p1,p2):
+    dx = (p2[0] - p1[0])
+    dy = (p2[1] - p1[1])
+    dz = (p2[2] - p1[2])
+    distance = np.sqrt(dx*dx + dy*dy + dz*dz)
 
+    return distance
+
+class MovingObject:
+    def __init__(self, objectFrame, currentPosition, startPosition, endPosition, totalTime, loopPath = False):
+        self.currentPosition = currentPosition
+        self.objectFrame = objectFrame
+        self.startPosition = startPosition
+        self.endPosition = endPosition
+        self.goalPosition = self.endPosition
+        self.totalTime = totalTime
+        self.loopPath = loopPath
+        self.goalTolerance = 0.01
+        self.calculateVelocity()
+
+    def calculateVelocity(self):
+        p1 = self.startPosition
+        p2 = self.endPosition
+
+        vx = (p2[0] - p1[0])/self.totalTime
+        vy = (p2[1] - p1[1])/self.totalTime
+        vz = (p2[2] - p1[2])/self.totalTime
+
+        self.velocity = [vx, vy, vz]
+        self.speed = np.sqrt(vx*vx + vy*vy + vz*vz)
+
+        print('totalTime : ',self.totalTime)
+        print('p1 : ',p1)
+        print('p2 : ',p2)
+        print('velocity : ',self.velocity)
+        print('speed : ',self.speed)
+
+
+    def updatePosition(self, deltaTime):
+        position = self.currentPosition
+        [vx, vy, vz] = self.velocity
+
+        position[0] = position[0] + vx * deltaTime
+        position[1] = position[1] + vy * deltaTime
+        position[2] = position[2] + vz * deltaTime
+
+        if(getDistance(position,self.goalPosition) <= self.goalTolerance):
+            self.toggleGoal()
+
+        return position
+
+    def toggleGoal(self):
+        if getDistance(self.goalPosition, self.endPosition) == 0:
+            self.goalPosition = self.startPosition
+            print(self.objectFrame + ' :: toggleGoal to start')
+        elif getDistance(self.goalPosition, self.startPosition) == 0:
+            self.goalPosition = self.endPosition
+            print(self.objectFrame + ' :: toggleGoal to end')
 
 class BallDeflector:
     def __init__(self, perceptionMode='cheat', exportVideoMode = False, debug = False):
@@ -71,6 +128,7 @@ class BallDeflector:
         self.setupSim()
         self.setupC()
 
+        self.movingObjects = []
 
         self.exportVideoMode = exportVideoMode
         if self.exportVideoMode:
@@ -89,6 +147,7 @@ class BallDeflector:
 
     def stepTime(self):
         self.t += 1
+        self.updateMovingObjects()
         if self.t % self.speed_scale == 0 and self.exportVideoMode :
             self.exportScreenshot()
 
@@ -151,6 +210,25 @@ class BallDeflector:
         out.release()
 
         # os.system("rm -r ./images/*.png")
+
+    def moveObject(self, objectFrame, targetPosition, targetQuaternion = None):
+        self.targetObj = self.RealWorld.getFrame(objectFrame)
+        self.targetObj.setPosition(targetPosition)
+        if targetQuaternion is not None:
+            self.targetObj.setQuaternion(targetQuaternion)
+
+        ## DEBUG: Remove Later
+        self.targetObj = self.C.getFrame(objectFrame)
+        self.targetObj.setPosition(targetPosition)
+        if targetQuaternion is not None:
+            self.targetObj.setQuaternion(targetQuaternion)
+
+    def updateMovingObjects(self):
+        for object in self.movingObjects:
+            targetPosition = object.updatePosition(self.tau)
+            objectFrame = object.objectFrame
+            print('Update Moving Obj ' + objectFrame)
+            self.moveObject(objectFrame, targetPosition)
 
 
     def selectBall(self, ballFrame):
@@ -883,11 +961,18 @@ def exportVideoTest():
     input('Done...')
     M.destroy()
 
-
-def exportVideoTest():
+def movingBinTest():
     ballFrame = "ball3"
     M = BallDeflector(perceptionMode='komo', exportVideoMode = True, debug = True)
     input('Start...')
+    # M.moveObject('G_bin_base',[0,0,1],[0,0,0,1])
+    objectFrame = 'G_bin_base'
+    currentPosition = M.RealWorld.getFrame(objectFrame).getPosition()
+    startPosition = currentPosition
+    endPosition = [currentPosition[0] - 0.5, currentPosition[1], currentPosition[2]]
+    totalTime = 5
+    mObj = MovingObject(objectFrame, currentPosition, startPosition, endPosition, totalTime, loopPath = True)
+    M.movingObjects.append(mObj)
     M.selectBall(ballFrame)
     M.runSim(200)
     M.pickAndPlace('A', ballFrame, "ramp_1")
@@ -927,9 +1012,10 @@ def main():
     # fullScenePerceptionTest()
     # fullScenePerceptionTest2()
     # fullScenePerceptionWithVideo()
-    singleBallScene()
+    # singleBallScene()
     # runSimTest()
     # exportVideoTest()
+    movingBinTest()
 
 if __name__ == "__main__":
     main()
