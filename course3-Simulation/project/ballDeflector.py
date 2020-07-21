@@ -10,8 +10,9 @@ import glob
 import os
 print(cv.__version__)
 def segmentColorPixels(rgb, colorMode):
-    rgb = cv.cvtColor(rgb, cv.COLOR_BGR2RGB) # BUG: Don't know why this is needed, but it doesn't work without this
+    rgb = cv.cvtColor(rgb, cv.COLOR_BGR2RGB)
     hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
+
     # Red Pixels
     if colorMode == 'r':
         mask1 = cv.inRange(hsv, (  0, 120, 70), ( 10, 255, 255))
@@ -251,7 +252,7 @@ class BallDeflector:
 
     def komoBallPose(self,obj_points, num_batch = 5):
         num_obj = int(obj_points.shape[0]/num_batch)
-#         permutation = np.random.permutation(obj_points.shape[0])
+        # permutation = np.random.permutation(obj_points.shape[0])
         permutation = np.arange(obj_points.shape[0])
         for b in range(num_batch):
             for o in range(num_obj):
@@ -479,12 +480,12 @@ class BallDeflector:
         self.moveToInit()
         self.perception()
         self.align(robotName)
-#         input()
+        # input()
         success = self.pick(robotName)
         if success:
             self.moveToDest(robotName)
             print('====== Done ======')
-#         input()
+        # input()
 
     def pickAndPlace(self, robotName, ballFrame, destFrame):
         self.setTarget(ballFrame)
@@ -501,7 +502,7 @@ class BallDeflector:
             self.moveToDest(robotName,targetPose)
             self.openGripper(robotName)
             print('====== Done ======')
-    #         input()
+            # input()
 
 
     def deflectBall(self, robotName, ballFrame,binFrame):
@@ -551,12 +552,12 @@ class BallDeflector:
 
         p1,p2 = self.movingBallPerception(ballFrame,observeTime)
         position = self.calculateFuturePosition(p1,p2, observeTime, total_time)
-        self.createBallFrame('future_ball',position,color = [0,1,0,0.3])
+        self.createBallFrame('future_ball',position,color = [0,1,0,0.3],contact = 0)
         # self.createBallFrame('future_ball',[1, 0, .3],[0,0,0,1])
         # self.moveGripper('B','init',[0.3,0,0.62],[ -0.383, 0,0,0.924])
         goalPos = self.RealWorld.getFrame(goalFrame).getPosition()
         goalPos[2] = 0.3
-        self.createBallFrame('goal',goalPos,[0,0,0,1])
+        self.createBallFrame('goal',goalPos,[0,0,0,1],contact = 0)
         startPosition = self.C.getFrame('future_ball').getPosition()
         goalPosition = self.C.getFrame('goal').getPosition()
         offset = 0.5
@@ -571,17 +572,17 @@ class BallDeflector:
                 position[0] = startPosition[0] - i*dt*np.cos(angle)
                 position[1] = startPosition[1] - i*dt*np.sin(angle)
                 position[2] = 0.3
-                self.createBallFrame('fball_'+str(i),position,color = [0,0,0,0.3])
+                self.createBallFrame('fball_'+str(i),position,color = [0,0,0,0.3],contact = 0)
 
         hitTimeDelay = -65 # 65 time units early
         # angle = angle - np.pi/2
         # angle= angle/2
         q = euler_to_quaternion(angle,0,0)
         print('Deflector Init Pos : ',initPosition, ' , quaternion: ',q)
-        self.createBallFrame('init',initPosition,[0,0,0,1],[1,1,0,0.3])
-        self.moveGripper('B','init',[0,0,0.62],q) # 30 time units
+        self.createBallFrame('init',initPosition,[0,0,0,1],[1,1,0,0.3],contact = 0)
+        self.moveGripper('B','init',[0,0,0.63],q) # 30 time units
         self.runSim(total_time + hitTimeDelay)
-        self.moveGripper('B','future_ball',[0,0,0.62],q) # 30 time units
+        self.moveGripper('B','future_ball',[0,0,0.63],q) # 30 time units
 
 
     def moveGripper(self, robotName, targetFrame, targetOffset, targetOrientation):
@@ -600,12 +601,8 @@ class BallDeflector:
         komo = self.C.komo_path(1.,T,T*self.tau,True)
         komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, targetFrame], ry.OT.eq, [2e1], target=targetOffset)
         komo.addObjective([1.], ry.FS.quaternion, [gripperCenterFrame], ry.OT.eq, target=targetOrientation)
-        komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
-        # komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
-        # komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
+        # komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
         komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
-        # komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
-        # komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
         komo.optimize()
         for t in range(T):
             self.C.setFrameState(komo.getConfiguration(t))
@@ -903,6 +900,22 @@ def exportVideoTest():
     input('Done...')
     M.destroy()
 
+def singleBallScene():
+    ballFrame = "ball3"
+    M = BallDeflector(perceptionMode='komo', exportVideoMode = True, debug = True)
+    input('Start...')
+    M.selectBall(ballFrame)
+    M.runSim(200)
+    M.pickAndPlace('A', ballFrame, "ramp_1")
+    M.runSim(200)
+    # Test Arm Movement
+    M.hitBall('B', ballFrame, 'G_bin_base')
+    M.runSim(700)
+    M.clearExtraFrames()
+    M.runSim(100)
+    input('Done...')
+    M.destroy()
+
 def main():
     # hitBallTest()
     # hitBallTestDebug()
@@ -913,7 +926,8 @@ def main():
     # perceptionTest()
     # fullScenePerceptionTest()
     # fullScenePerceptionTest2()
-    fullScenePerceptionWithVideo()
+    # fullScenePerceptionWithVideo()
+    singleBallScene()
     # runSimTest()
     # exportVideoTest()
 
