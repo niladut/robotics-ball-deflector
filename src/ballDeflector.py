@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.append('../../build')
+sys.path.append('../build')
 import libry as ry
 import numpy as np
 import time
@@ -9,6 +9,9 @@ import cv2 as cv
 import glob
 import os
 print(cv.__version__)
+
+SCENE_FILE = "../scenarios/ball_deflector_scene.g"
+
 def segmentColorPixels(rgb, colorMode):
     rgb = cv.cvtColor(rgb, cv.COLOR_BGR2RGB)
     hsv = cv.cvtColor(rgb, cv.COLOR_BGR2HSV)
@@ -201,7 +204,7 @@ class BallDeflector:
     def setupSim(self):
         #-- REAL WORLD configuration, which is attached to the physics engine
         self.RealWorld = ry.Config()
-        self.RealWorld.addFile("../../scenarios/game_scene.g")
+        self.RealWorld.addFile(SCENE_FILE)
 
         # testBall = self.RealWorld.getFrame('ball3')
         # objectPosition = self.testBall.getPosition()
@@ -219,7 +222,7 @@ class BallDeflector:
         #-- MODEL WORLD configuration, this is the data structure on which you represent
         # what you know about the world and compute things (controls, contacts, etc)
         self.C = ry.Config()
-        self.C.addFile("../../scenarios/game_scene.g")
+        self.C.addFile(SCENE_FILE)
 
         self.C.delFrame("ball1")
         self.C.delFrame("ball2")
