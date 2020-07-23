@@ -105,8 +105,6 @@ class BallDeflector:
 
 
     def selectBall(self, ballFrame):
-        #you can also change the shape & size
-        # obj = self.RealWorld.getFrame(ballFrame)
         if ballFrame == 'ball1':
             colorMode = 'r'
         elif ballFrame == 'ball2':
@@ -541,18 +539,12 @@ class BallDeflector:
         gripperFingerFrame = robotName + "_finger1"
         print('===== Move Robot ',robotName,' with gripper frame ', gripperCenterFrame, ' to targetFrame ',targetFrame)
 
-        # self.setTarget(targetFrame)
-        #
-        # self.def = self.C.addFrame(targetFrame)
-        # self.def.setShape(ry.ST.sphere, [.05])
-        # self.def.setColor([1,1,0,0.9])
-
         T = 30
         self.C.setJointState(self.S.get_q())
         komo = self.C.komo_path(1.,T,T*self.tau,True)
         komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, targetFrame], ry.OT.eq, [2e1], target=targetOffset)
         komo.addObjective([1.], ry.FS.quaternion, [gripperCenterFrame], ry.OT.eq, target=targetOrientation)
-        # komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
+        komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
         komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
         komo.optimize()
         for t in range(T):
@@ -565,41 +557,6 @@ class BallDeflector:
 
         print('===== Done Moving =====')
 
-    def moveGripperIK(self, robotName, targetFrame, targetOffset, targetOrientation):
-        gripperCenterFrame = robotName + "_gripperCenter"
-        gripperFingerFrame = robotName + "_finger1"
-        print('===== Move Robot ',robotName,' with gripper frame ', gripperCenterFrame, ' to targetFrame ',targetFrame)
-
-        # self.setTarget(targetFrame)
-        #
-        # self.def = self.C.addFrame(targetFrame)
-        # self.def.setShape(ry.ST.sphere, [.05])
-        # self.def.setColor([1,1,0,0.9])
-
-        T = 30
-        self.C.setJointState(self.S.get_q())
-        komo = self.C.komo_IK(True)
-        # komo.addObjective(type=ry.OT.eq, feature=ry.FS.positionDiff, frames=[gripperCenterFrame, targetFrame],target=targetOffset)
-        komo.addObjective([1.], ry.FS.positionDiff, [gripperCenterFrame, targetFrame], ry.OT.eq, [2e1], target=targetOffset)
-        komo.addObjective([1.], ry.FS.quaternion, [gripperCenterFrame], ry.OT.eq, target=targetOrientation)
-        # komo.addObjective([1.], ry.FS.vectorZ, [gripperCenterFrame], ry.OT.eq, scale=[1e1], target=[0,0,1]);
-        # komo.addObjective([1.], ry.FS.scalarProductYX, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
-        # komo.addObjective([1.], ry.FS.scalarProductYY, [gripperCenterFrame, self.targetFrame], ry.OT.eq);
-        # komo.addObjective([], ry.FS.accumulatedCollisions, type=ry.OT.ineq, scale=[1e1])
-        # komo.addObjective([], ry.FS.qItself, [gripperFingerFrame], ry.OT.eq, [1e1], order=1)
-        # komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, [1e1], order=1)
-        komo.optimize()
-        self.C.setFrameState(komo.getConfiguration(0))
-        self.V.setConfiguration(self.C)
-        # for t in range(T):
-        #     self.C.setFrameState(komo.getConfiguration(t))
-        #     q = self.C.getJointState()
-        #     time.sleep(self.tau)
-        #     self.S.step(q, self.tau, ry.ControlMode.position)
-        #     self.V.setConfiguration(self.C)
-        #     self.stepTime()
-
-        print('===== Done Moving =====')
 
     def calculateFuturePosition(self,p1,p2, observeTime, futureTimeInterval):
         # t = observeTime
