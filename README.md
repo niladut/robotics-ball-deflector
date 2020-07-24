@@ -74,5 +74,5 @@ move it to a specified target position.
 ## 2. Usage
 To run the project file
 ```bash
-python3 project.py
+python3 src/main.py
 ```
