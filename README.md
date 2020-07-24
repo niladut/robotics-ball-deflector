@@ -3,6 +3,7 @@
 * Course Name: AI and Robotics SS20
 * Authors: Ankit Dagar Niladri Dutta
 * Date Created: June 2020
+* Project Video: https://youtu.be/Dgt2PGqyBls
 
 This repo is based on RAI code, including its python bindings. See https://github.com/MarcToussaint/rai for a README of the RAI code.
 
